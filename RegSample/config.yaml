@@ -1,0 +1,216 @@
+# Data Configuration
+data:
+  input_file: 'data.csv'  # or null for synthetic data
+  target_column: 'target'
+  test_size: 0.2
+  random_state: 42
+  synthetic_data:
+    n_samples: 1000
+    n_features: 20
+    noise: 0.1
+
+# Preprocessing Configuration
+preprocessing:
+  scaling: 'standard'  # 'standard', 'minmax', 'robust', or null
+  handle_missing: true
+  feature_engineering:
+    polynomial_features: false
+    interaction_features: false
+  
+# Feature Selection
+feature_selection:
+  method: 'none'  # 'none', 'k_best', 'percentile', 'from_model'
+  params:
+    k: 10
+    percentile: 20
+    threshold: 'mean'
+
+# Model Configuration
+models:
+  linear:
+    enable: true
+    params:
+      fit_intercept: true
+      copy_X: true
+      n_jobs: null
+      positive: false
+
+  logistic:
+    enable: false
+    params:
+      penalty: 'l2'
+      C: 1.0
+      fit_intercept: true
+      solver: 'lbfgs'
+      max_iter: 100
+      multi_class: 'auto'
+      warm_start: false
+      l1_ratio: null
+
+  lasso:
+    enable: true
+    params:
+      alpha: 1.0
+      fit_intercept: true
+      max_iter: 1000
+      tol: 0.0001
+      warm_start: false
+      selection: 'cyclic'
+      random_state: 42
+
+  ridge:
+    enable: true
+    params:
+      alpha: 1.0
+      fit_intercept: true
+      max_iter: null
+      tol: 0.001
+      solver: 'auto'
+      random_state: 42
+
+  elastic_net:
+    enable: true
+    params:
+      alpha: 1.0
+      l1_ratio: 0.5
+      fit_intercept: true
+      max_iter: 1000
+      tol: 0.0001
+      warm_start: false
+      random_state: 42
+      selection: 'cyclic'
+
+  random_forest:
+    enable: true
+    params:
+      n_estimators: 100
+      max_depth: null
+      min_samples_split: 2
+      min_samples_leaf: 1
+      max_features: 'auto'
+      bootstrap: true
+      criterion: 'squared_error'
+      max_leaf_nodes: null
+      min_impurity_decrease: 0.0
+      warm_start: false
+      n_jobs: -1
+      random_state: 42
+
+  svr:
+    enable: true
+    params:
+      kernel: 'rbf'
+      C: 1.0
+      epsilon: 0.1
+      gamma: 'scale'
+      tol: 0.001
+      shrinking: true
+      cache_size: 200
+      max_iter: -1
+
+  knn:
+    enable: true
+    params:
+      n_neighbors: 5
+      weights: 'uniform'
+      algorithm: 'auto'
+      leaf_size: 30
+      p: 2
+      metric: 'minkowski'
+      n_jobs: -1
+
+  adaboost:
+    enable: true
+    params:
+      n_estimators: 50
+      learning_rate: 1.0
+      loss: 'linear'
+      random_state: 42
+
+  bagging:
+    enable: true
+    params:
+      n_estimators: 10
+      max_samples: 1.0
+      max_features: 1.0
+      bootstrap: true
+      bootstrap_features: false
+      n_jobs: -1
+      random_state: 42
+      warm_start: false
+
+  xgboost:
+    enable: true
+    params:
+      n_estimators: 100
+      max_depth: 3
+      learning_rate: 0.1
+      subsample: 1.0
+      colsample_bytree: 1.0
+      colsample_bylevel: 1.0
+      min_child_weight: 1
+      gamma: 0
+      reg_alpha: 0
+      reg_lambda: 1
+      tree_method: 'auto'
+      booster: 'gbtree'
+      random_state: 42
+      n_jobs: -1
+
+  gradient_boosting:
+    enable: true
+    params:
+      n_estimators: 100
+      learning_rate: 0.1
+      max_depth: 3
+      min_samples_split: 2
+      min_samples_leaf: 1
+      subsample: 1.0
+      max_features: 'auto'
+      criterion: 'friedman_mse'
+      loss: 'squared_error'
+      random_state: 42
+      warm_start: false
+      validation_fraction: 0.1
+      n_iter_no_change: null
+      tol: 0.0001
+
+# Hyperparameter Tuning
+tuning:
+  method: 'random'  # 'random' or 'grid'
+  cv_folds: 5
+  n_iter: 100  # for random search
+  scoring: 'neg_mean_squared_error'
+
+# Model Evaluation
+evaluation:
+  metrics:
+    - 'mse'
+    - 'rmse'
+    - 'mae'
+    - 'r2'
+    - 'explained_variance'
+  analysis:
+    learning_curves: true
+    validation_curves: true
+    feature_importance: true
+    prediction_error: true
+  plots:
+    residuals: true
+    learning_curves: true
+    validation_curves: true
+    feature_importance: true
+    prediction_error: true
+
+# Output Configuration
+output:
+  save_model: true
+  results_path: 'results'
+  model_path: 'models'
+  plots_path: 'plots'
+  log_level: 'INFO'
+
+# Hardware Configuration
+hardware:
+  use_gpu: false
+  n_jobs: -1  # -1 for using all available cores
