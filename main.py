@@ -176,3 +176,6 @@ if __name__ == "__main__":
                       help='Path to configuration file')
     args = parser.parse_args()
     main(args.config)
+
+# pip install -r requirements.txt
+# python main.py --config config.yaml
