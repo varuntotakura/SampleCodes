@@ -1,0 +1,72 @@
+experiment_name: "classification_experiment"
+mlflow_tracking_uri: null  # Set to your MLflow tracking server if available
+problem_type: "classification"
+use_gpu: false
+
+# Data configuration
+data:
+  synthetic: true
+  n_samples: 1000
+  n_features: 208
+  test_size: 0.2
+  path: null  # Set this if using real data
+  target_column: null  # Set this if using real data
+
+# Preprocessing configuration
+preprocessing:
+  numeric_features: null  # Will be auto-detected if null
+  categorical_features: null  # Will be auto-detected if null
+  datetime_features: null
+  scaler: "standard"  # Options: standard, robust, minmax
+  imputer: "simple"  # Options: simple, knn
+  categorical_encoder: "target"  # Options: target, woe, count
+  feature_selection: "mutual_info"  # Options: mutual_info, model_based, null
+  n_features_to_select: 50
+  pca_components: null  # Set to int or float for dimensionality reduction
+  handle_imbalance: "smote"  # Options: smote, adasyn, random_under, smote_tomek, null
+  sampling_strategy: "auto"
+
+# Model configurations
+models_to_use:
+  - "xgboost"
+  - "lightgbm"
+  # - "catboost"  # Uncomment to use
+  # - "random_forest"  # Uncomment to use
+
+# Default parameters for each model
+models:
+  xgboost:
+    n_estimators: 100
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 1
+    gamma: 0
+  
+  lightgbm:
+    n_estimators: 100
+    num_leaves: 31
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_samples: 20
+  
+  catboost:
+    iterations: 100
+    depth: 6
+    learning_rate: 0.1
+    l2_leaf_reg: 3
+    subsample: 0.8
+  
+  random_forest:
+    n_estimators: 100
+    max_depth: 6
+    min_samples_split: 2
+    min_samples_leaf: 1
+
+# Optimization settings
+optimization:
+  method: "random"  # Options: random, grid, optuna, hyperopt
+  cv_folds: 5
+  n_iter: 20  # Number of iterations for random/hyperopt/optuna
