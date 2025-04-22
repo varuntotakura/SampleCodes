@@ -1,14 +1,6 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder
-from sklearn.impute import SimpleImputer
-
-def handle_missing_values(df, strategy="mean", fill_value=None):
-    """
-    Handles missing values in a DataFrame.
-    """
-    imputer = SimpleImputer(strategy=strategy, fill_value=fill_value)
-    return pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
 
 def scale_features(df, method="standard"):
     """
