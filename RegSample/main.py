@@ -315,14 +315,14 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any], current_model:
     for model_name, model_results in results.items():
         model_metrics = {
             'model': model_name,
-            'train_r2': model_results['train_results']['r2'],
-            'test_r2': model_results['test_results']['r2'],
-            'train_mse': model_results['train_results']['mse'],
-            'test_mse': model_results['test_results']['mse'],
-            'train_mae': model_results['train_results']['mae'],
-            'test_mae': model_results['test_results']['mae'],
-            'train_explained_variance': model_results['train_results']['explained_variance'],
-            'test_explained_variance': model_results['test_results']['explained_variance'],
+            'train_r2': float(model_results['train_results']['r2']),
+            'test_r2': float(model_results['test_results']['r2']),
+            'train_mse': float(model_results['train_results']['mse']),
+            'test_mse': float(model_results['test_results']['mse']),
+            'train_mae': float(model_results['train_results']['mae']),
+            'test_mae': float(model_results['test_results']['mae']),
+            'train_explained_variance': float(model_results['train_results']['explained_variance']),
+            'test_explained_variance': float(model_results['test_results']['explained_variance']),
         }
         
         # Add best parameters to results
@@ -353,7 +353,7 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any], current_model:
                 ModelBuilder.save_model(model_results['model'], model_path)
                 logging.info(f"Model saved to {model_path}")
                 
-                # Save best configuration in YAML
+                # Save best configuration in YAML with native Python types
                 best_config = {
                     'model': model_name,
                     'feature_selection': feature_sel,
@@ -361,16 +361,16 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any], current_model:
                     'timestamp': timestamp,
                     'best_params': model_results['best_params'] if 'best_params' in model_results else {},
                     'training_metrics': {
-                        'r2': model_results['train_results']['r2'],
-                        'mse': model_results['train_results']['mse'],
-                        'mae': model_results['train_results']['mae'],
-                        'explained_variance': model_results['train_results']['explained_variance']
+                        'r2': float(model_results['train_results']['r2']),
+                        'mse': float(model_results['train_results']['mse']),
+                        'mae': float(model_results['train_results']['mae']),
+                        'explained_variance': float(model_results['train_results']['explained_variance'])
                     },
                     'test_metrics': {
-                        'r2': model_results['test_results']['r2'],
-                        'mse': model_results['test_results']['mse'],
-                        'mae': model_results['test_results']['mae'],
-                        'explained_variance': model_results['test_results']['explained_variance']
+                        'r2': float(model_results['test_results']['r2']),
+                        'mse': float(model_results['test_results']['mse']),
+                        'mae': float(model_results['test_results']['mae']),
+                        'explained_variance': float(model_results['test_results']['explained_variance'])
                     }
                 }
                 config_path = model_dir / f"{model_name}_{feature_sel}_{tune_method}_{timestamp}_config.yaml"
@@ -385,8 +385,17 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any], current_model:
     for model_name, model_results in results.items():
         if 'evaluation' in model_results:
             eval_path = output_dir / f'{model_name}_{feature_sel}_{tune_method}_{timestamp}_evaluation.yaml'
+            
+            # Convert numpy values to native Python types
+            eval_results = {}
+            for key, value in model_results['evaluation'].items():
+                if hasattr(value, 'dtype'):  # Check if it's a numpy value
+                    eval_results[key] = float(value)
+                else:
+                    eval_results[key] = value
+                    
             with open(eval_path, 'w') as f:
-                yaml.dump(model_results['evaluation'], f)
+                yaml.dump(eval_results, f)
             logging.info(f"Evaluation results saved to {eval_path}")
 
 def generate_sample_data(n_samples=1000, n_features=208):
