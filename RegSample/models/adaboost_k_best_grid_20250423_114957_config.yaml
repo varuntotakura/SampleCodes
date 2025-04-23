@@ -1,0 +1,18 @@
+best_params:
+  learning_rate: 0.1
+  loss: linear
+  n_estimators: 50
+feature_selection: k_best
+model: adaboost
+test_metrics:
+  explained_variance: 0.5310358870760634
+  mae: 0.5998003340105544
+  mse: 0.552413705556558
+  r2: 0.447586284176802
+timestamp: '20250423_114957'
+training_metrics:
+  explained_variance: 0.603699113509657
+  mae: 0.502521696026828
+  mse: 0.4076135925882118
+  r2: 0.5923863940776988
+tuning_method: grid

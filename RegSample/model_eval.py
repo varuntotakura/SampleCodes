@@ -12,6 +12,8 @@ from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.stattools import durbin_watson
 import statsmodels.api as sm
 import os
+from datetime import datetime
+import logging
 
 def _save_or_show_plot(fig, save_path=None):
     """Helper function to save or show a plot."""
@@ -260,7 +262,7 @@ class ModelEvaluator:
         Plot residual analysis for the model.
         
         Args:
-            save_path (str, optional): Path to save the plot. If None, plot is displayed.
+            save_path (str, optional): Path to save the plot. If None, saves to default plots directory.
         """
         residuals = self.y_true - self.y_pred
         
@@ -292,14 +294,22 @@ class ModelEvaluator:
         axes[1, 1].axhline(y=0, color='r', linestyle='-')
         
         plt.tight_layout()
-        _save_or_show_plot(fig, save_path)
+        
+        # Use provided save path or default to plots directory
+        if save_path is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            save_path = os.path.join(self.plots_dir, f'residual_analysis_{timestamp}.png')
+        
+        fig.savefig(save_path)
+        plt.close(fig)
     
-    def get_complete_evaluation(self, X: np.ndarray = None) -> Dict:
+    def get_complete_evaluation(self, X: np.ndarray = None, model = None) -> Dict:
         """
         Get complete evaluation results including all metrics and analyses.
         
         Args:
             X (np.ndarray, optional): Feature matrix for correlation analysis
+            model (optional): The trained model for additional analysis if needed
             
         Returns:
             Dict: Complete evaluation results with formatted values
@@ -321,13 +331,21 @@ class ModelEvaluator:
         # Get all evaluation results
         results = {
             'error_metrics': self.calculate_error_metrics(),
-            'correlation': self.analyze_correlation(X),
-            'homoscedasticity': self.test_homoscedasticity(),
-            'autocorrelation': self.analyze_autocorrelation(),
             'variance': self.analyze_variance(),
             'percentile_distribution': self.analyze_percentile_distribution()
         }
-
+        
+        # Add correlation analysis if X is provided
+        if X is not None:
+            results['correlation'] = self.analyze_correlation(X)
+        
+        # Add homoscedasticity and autocorrelation tests
+        try:
+            results['homoscedasticity'] = self.test_homoscedasticity()
+            results['autocorrelation'] = self.analyze_autocorrelation()
+        except Exception as e:
+            logging.warning(f"Some statistical tests could not be completed: {str(e)}")
+        
         # Format all values to be YAML-friendly
         return {k: format_value(v) for k, v in results.items()}
     

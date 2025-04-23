@@ -25,8 +25,9 @@ class DataPreprocessor:
         self.scaling_stats = {}
         self._scalers = {}
         self._handle_data_types()
-        # Set default value for use_inf_as_null if not in config
+        # Set default value for use_inf_as_null
         self.use_inf_as_null = False
+        self._handle_infinities()
         
     def _handle_infinities(self):
         """Handle infinite values in the dataset based on configuration"""

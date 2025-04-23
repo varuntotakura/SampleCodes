@@ -1,0 +1,27 @@
+best_params:
+  bootstrap: true
+  criterion: squared_error
+  max_depth: 10
+  max_features: auto
+  max_leaf_nodes: null
+  min_impurity_decrease: 0.0
+  min_samples_leaf: 1
+  min_samples_split: 2
+  n_estimators: 100
+  n_jobs: -1
+  random_state: 42
+  warm_start: false
+feature_selection: vif
+model: random_forest
+test_metrics:
+  explained_variance: 0.43231687062840607
+  mae: 0.625521375133084
+  mse: 0.7173655472564048
+  r2: 0.28263443941131594
+timestamp: '20250423_115148'
+training_metrics:
+  explained_variance: 0.831777632395656
+  mae: 0.29783656542719683
+  mse: 0.16822250562133817
+  r2: 0.8317774888756708
+tuning_method: grid

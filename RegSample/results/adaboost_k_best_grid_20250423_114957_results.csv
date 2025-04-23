@@ -1,0 +1,2 @@
+model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_learning_rate,param_loss,param_n_estimators
+adaboost,0.5923863940776988,0.447586284176802,0.4076135925882118,0.552413705556558,0.502521696026828,0.5998003340105544,0.603699113509657,0.5310358870760634,0.1,linear,50

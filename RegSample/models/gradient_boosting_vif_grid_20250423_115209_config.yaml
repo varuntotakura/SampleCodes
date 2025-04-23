@@ -1,0 +1,25 @@
+best_params:
+  criterion: friedman_mse
+  learning_rate: 0.1
+  loss: squared_error
+  max_depth: 3
+  max_features: auto
+  min_samples_leaf: 1
+  min_samples_split: 2
+  n_estimators: 100
+  random_state: 42
+  subsample: 0.8
+feature_selection: vif
+model: gradient_boosting
+test_metrics:
+  explained_variance: 0.5991777901815176
+  mae: 0.5126305774042973
+  mse: 0.45220407880329855
+  r2: 0.547795912792463
+timestamp: '20250423_115209'
+training_metrics:
+  explained_variance: 0.7448387664145987
+  mae: 0.36371004976576804
+  mse: 0.25516213085150147
+  r2: 0.7448378608014887
+tuning_method: grid

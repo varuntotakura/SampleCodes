@@ -1,0 +1,2 @@
+model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_bootstrap,param_criterion,param_max_depth,param_max_features,param_max_leaf_nodes,param_min_impurity_decrease,param_min_samples_leaf,param_min_samples_split,param_n_estimators,param_n_jobs,param_random_state,param_warm_start
+random_forest,0.8317774888756708,0.28263443941131594,0.16822250562133817,0.7173655472564048,0.29783656542719683,0.625521375133084,0.831777632395656,0.43231687062840607,True,squared_error,10,auto,,0.0,1,2,100,-1,42,False

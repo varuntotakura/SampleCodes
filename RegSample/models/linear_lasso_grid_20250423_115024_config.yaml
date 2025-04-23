@@ -1,0 +1,20 @@
+best_params:
+  copy_X: true
+  fit_intercept: true
+  n_jobs: -1
+  normalize: true
+  positive: false
+feature_selection: lasso
+model: linear
+test_metrics:
+  explained_variance: 0.4940185546875
+  mae: 0.5296258330345154
+  mse: 0.5059814453125
+  r2: 0.4940185566175074
+timestamp: '20250423_115024'
+training_metrics:
+  explained_variance: 0.5127788186073303
+  mae: 0.521163821220398
+  mse: 0.4872211813926697
+  r2: 0.5127787970023099
+tuning_method: grid

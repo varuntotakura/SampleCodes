@@ -1,0 +1,20 @@
+best_params:
+  copy_X: true
+  fit_intercept: true
+  n_jobs: -1
+  normalize: true
+  positive: false
+feature_selection: vif
+model: linear
+test_metrics:
+  explained_variance: 0.5016261339187622
+  mae: 0.5238761901855469
+  mse: 0.4983738660812378
+  r2: 0.5016261140525766
+timestamp: '20250423_115121'
+training_metrics:
+  explained_variance: 0.5161588191986084
+  mae: 0.5189425349235535
+  mse: 0.4838411808013916
+  r2: 0.5161588078647484
+tuning_method: grid

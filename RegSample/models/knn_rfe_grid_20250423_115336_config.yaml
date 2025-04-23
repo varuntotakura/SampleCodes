@@ -1,0 +1,22 @@
+best_params:
+  algorithm: auto
+  leaf_size: 30
+  metric: minkowski
+  n_jobs: -1
+  n_neighbors: 5
+  p: 2
+  weights: uniform
+feature_selection: rfe
+model: knn
+test_metrics:
+  explained_variance: 0.6932582855224609
+  mae: 0.37523841857910156
+  mse: 0.30676546692848206
+  r2: 0.6932344971392048
+timestamp: '20250423_115336'
+training_metrics:
+  explained_variance: 0.7970029711723328
+  mae: 0.30723533034324646
+  mse: 0.20310185849666595
+  r2: 0.796898126785989
+tuning_method: grid

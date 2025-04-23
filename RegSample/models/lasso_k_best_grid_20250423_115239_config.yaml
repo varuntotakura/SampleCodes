@@ -1,0 +1,21 @@
+best_params:
+  alpha: 0.1
+  fit_intercept: true
+  max_iter: 1000
+  random_state: 42
+  selection: cyclic
+  tol: 0.0001
+feature_selection: k_best
+model: lasso
+test_metrics:
+  explained_variance: 0.47447770833969116
+  mae: 0.5480840802192688
+  mse: 0.5255222916603088
+  r2: 0.4744777071215549
+timestamp: '20250423_115239'
+training_metrics:
+  explained_variance: 0.49000734090805054
+  mae: 0.5404829978942871
+  mse: 0.5099926590919495
+  r2: 0.4900072565309077
+tuning_method: grid

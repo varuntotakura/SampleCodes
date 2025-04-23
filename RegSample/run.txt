@@ -12,3 +12,4 @@ python main.py --config config.yaml --model elastic_net --feature-selection knn 
 python main.py --config config.yaml --model svr --feature-selection knn --tune-method grid
 python main.py --config config.yaml --model knn --feature-selection rfe --tune-method random
 python main.py --config config.yaml --model knn --feature-selection rfe --tune-method grid
+python main.py --config config.yaml --model xgboost --feature-selection k-best --tune-method grid

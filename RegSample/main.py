@@ -168,22 +168,27 @@ def run_feature_engineering(data: pd.DataFrame, config: Dict[str, Any]) -> pd.Da
 def run_feature_selection(data, config, method_override=None):
     """Run feature selection step in the pipeline"""
     selector = FeatureSelector(data)
-    target = config.get('target_column', 'target')
+    target = config.get('data', {}).get('target_column', 'target')
     
     # Get method, either from CLI args or config
     method = method_override or config.get('feature_selection', {}).get('method', 'none')
     
-    # Configuration for feature selection
-    fs_config = config.get('feature_selection', {})
+    # Get feature selection specific config
+    fs_config = next((m['params'] for m in config.get('feature_selection', {}).get('methods', [])
+                     if m['name'] == method.replace('-', '_')), {})
     
-    # Number of features to select, using a default if not specified
-    n_features = fs_config.get('n_features', 10)
+    # Get number of features from method-specific config or fallback to a safe default
+    if method.lower() in ('k_best', 'k-best'):
+        n_features = min(fs_config.get('k', 5), len(data.columns) - 1)  # -1 for target column
+    else:
+        n_features = fs_config.get('n_features', 5)  # Default to 5 features for other methods
     
-    print(f"Using feature selection method: {method}")
+    print(f"Using feature selection method: {method} with {n_features} features")
     
     try:
-        if method.lower() == 'k_best' or method.lower() == 'k-best':
-            data = selector.select_k_best(target, k=n_features)
+        if method.lower() in ('k_best', 'k-best'):
+            score_func = fs_config.get('score_func', 'f_regression')
+            data = selector.select_k_best(target, k=n_features, score_func=score_func)
         elif method.lower() == 'lasso':
             # Get alpha from config or use default
             alpha = fs_config.get('alpha', 0.1)
@@ -195,7 +200,7 @@ def run_feature_selection(data, config, method_override=None):
         elif method.lower() == 'random_forest':
             # Get random forest specific parameters
             rf_params = {k: v for k, v in fs_config.items() 
-                      if k not in ['method', 'n_features']}
+                      if k not in ['k', 'score_func']}
             data = selector.random_forest_selection(target, n_features=n_features, **rf_params)
         elif method.lower() == 'vif':
             # Get threshold from config or use default

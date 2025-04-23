@@ -1,0 +1,22 @@
+best_params:
+  alpha: 0.1
+  fit_intercept: true
+  l1_ratio: 0.5
+  max_iter: 1000
+  random_state: 42
+  selection: cyclic
+  tol: 0.0001
+feature_selection: k_best
+model: elastic_net
+test_metrics:
+  explained_variance: 0.5034029483795166
+  mae: 0.529521644115448
+  mse: 0.4965970516204834
+  r2: 0.5034029013852994
+timestamp: '20250423_115300'
+training_metrics:
+  explained_variance: 0.51936274766922
+  mae: 0.5218173265457153
+  mse: 0.48063725233078003
+  r2: 0.5193627661994432
+tuning_method: grid
