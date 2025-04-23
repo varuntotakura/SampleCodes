@@ -952,8 +952,8 @@ def main():
                     print(f"    {param}: {value}")
 
     print(f"\n=== Evaluating Training Model ===")
-    eval_results = ModelEvaluator.evaluate_saved_model(
-        args.model, X_test.values, y_test.values, X_full=X_test.values
+    eval_results = ModelEvaluator.evaluate_training_model(
+        model_builder.models[model_type], X_test.values, y_test.values, X_full=X_test.values
     )
     print(yaml.dump(eval_results, sort_keys=False, allow_unicode=True))
 

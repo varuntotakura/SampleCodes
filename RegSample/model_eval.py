@@ -234,15 +234,20 @@ class ModelEvaluator:
         # Plot distribution comparisons
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
         
-        # True vs Predicted distributions
-        sns.kdeplot(data=self.y_true, ax=ax1, label='True Values')
-        sns.kdeplot(data=self.y_pred, ax=ax1, label='Predictions')
-        ax1.set_title('Distribution: True vs Predicted Values')
+        # True vs Predicted distributions using numpy's histogram
+        bins = np.histogram_bin_edges(np.concatenate([self.y_true, self.y_pred]), bins='auto')
+        ax1.hist(self.y_true, bins=bins, alpha=0.5, density=True, label='True Values')
+        ax1.hist(self.y_pred, bins=bins, alpha=0.5, density=True, label='Predictions')
         ax1.legend()
+        ax1.set_title('Distribution: True vs Predicted Values')
+        ax1.set_xlabel('Value')
+        ax1.set_ylabel('Density')
         
         # Residuals distribution
-        sns.histplot(data=self.residuals, kde=True, ax=ax2)
+        ax2.hist(self.residuals, bins='auto', density=True, alpha=0.5)
         ax2.set_title('Distribution of Residuals')
+        ax2.set_xlabel('Residual')
+        ax2.set_ylabel('Density')
         
         plt.tight_layout()
         plt.savefig(os.path.join(self.plots_dir, 'distribution_analysis.png'))
@@ -308,6 +313,22 @@ class ModelEvaluator:
             'percentile_distribution': self.analyze_percentile_distribution()
         }
     
+    @staticmethod
+    def evaluate_training_model(model, X: np.ndarray, y_true: np.ndarray, X_full: np.ndarray = None) -> dict:
+        """
+        Evaluate a training model using ModelEvaluator.
+        Args:
+            model: The trained model object with predict method
+            X (np.ndarray): Features to predict on
+            y_true (np.ndarray): True target values
+            X_full (np.ndarray, optional): Full feature matrix for correlation analysis
+        Returns:
+            dict: Complete evaluation results
+        """
+        y_pred = model.predict(X)
+        evaluator = ModelEvaluator(y_true, y_pred)
+        return evaluator.get_complete_evaluation(X_full)
+
     @staticmethod
     def evaluate_saved_model(model_path: str, X: np.ndarray, y_true: np.ndarray, X_full: np.ndarray = None) -> dict:
         """
