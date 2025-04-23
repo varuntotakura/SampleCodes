@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Union, Any, Optional
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.feature_selection import SelectKBest, f_regression
@@ -25,6 +25,26 @@ class FeatureEngineer:
         self.data = data.copy()
         self.feature_info = {}  # Store information about created features
         
+    def _validate_columns(self, columns: List[str]) -> List[str]:
+        """Validate column existence and return only valid columns"""
+        return [col for col in columns if col in self.data.columns]
+        
+    def _ensure_numeric(self, columns: List[str]) -> pd.DataFrame:
+        """
+        Ensure columns are numeric, converting if necessary.
+        
+        Args:
+            columns (List[str]): Columns to check/convert
+            
+        Returns:
+            pd.DataFrame: Data with numeric columns
+        """
+        numeric_data = self.data[columns].copy()
+        for col in columns:
+            if not pd.api.types.is_numeric_dtype(numeric_data[col]):
+                numeric_data[col] = pd.to_numeric(numeric_data[col], errors='coerce')
+        return numeric_data
+
     def create_derived_features(self, 
                               operations: Dict[str, Dict[str, Union[List[str], str]]]) -> pd.DataFrame:
         """
@@ -47,50 +67,38 @@ class FeatureEngineer:
             pd.DataFrame: Dataset with new derived features
         """
         for new_feature, params in operations.items():
-            columns = params['columns']
-            operation = params['operation'].lower()
+            columns = params.get('columns', [])
+            operation = params.get('operation', '').lower()
             
             if isinstance(columns, str):
                 columns = [columns]
                 
-            if all(col in self.data.columns for col in columns):
-                if operation == 'sum':
-                    self.data[new_feature] = self.data[columns].sum(axis=1)
-                elif operation == 'mean':
-                    self.data[new_feature] = self.data[columns].mean(axis=1)
-                elif operation == 'ratio':
-                    if len(columns) == 2 and (self.data[columns[1]] != 0).all():
-                        self.data[new_feature] = self.data[columns[0]] / self.data[columns[1]]
-                elif operation == 'difference':
-                    if len(columns) == 2:
-                        self.data[new_feature] = self.data[columns[0]] - self.data[columns[1]]
-                elif operation == 'product':
-                    self.data[new_feature] = self.data[columns].prod(axis=1)
+            valid_columns = self._validate_columns(columns)
+            if not valid_columns:
+                continue
                 
-                self.feature_info[new_feature] = {
-                    'type': 'derived',
-                    'operation': operation,
-                    'source_columns': columns
-                }
+            if operation == 'sum':
+                self.data[new_feature] = self.data[valid_columns].sum(axis=1)
+            elif operation == 'mean':
+                self.data[new_feature] = self.data[valid_columns].mean(axis=1)
+            elif operation == 'ratio' and len(valid_columns) == 2:
+                denominator = self.data[valid_columns[1]]
+                self.data[new_feature] = np.where(denominator != 0,
+                                                self.data[valid_columns[0]] / denominator,
+                                                np.nan)
+            elif operation == 'difference' and len(valid_columns) == 2:
+                self.data[new_feature] = self.data[valid_columns[0]] - self.data[valid_columns[1]]
+            elif operation == 'product':
+                self.data[new_feature] = self.data[valid_columns].prod(axis=1)
+                
+            self.feature_info[new_feature] = {
+                'type': 'derived',
+                'operation': operation,
+                'source_columns': valid_columns
+            }
             
         return self.data
     
-    def _ensure_numeric(self, columns: List[str]) -> pd.DataFrame:
-        """
-        Ensure columns are numeric, converting if necessary.
-        
-        Args:
-            columns (List[str]): Columns to check/convert
-            
-        Returns:
-            pd.DataFrame: Data with numeric columns
-        """
-        numeric_data = self.data[columns].copy()
-        for col in columns:
-            if not pd.api.types.is_numeric_dtype(numeric_data[col]):
-                numeric_data[col] = pd.to_numeric(numeric_data[col], errors='coerce')
-        return numeric_data
-
     def create_interaction_features(self,
                                   feature_pairs: List[List[str]],
                                   interaction_type: str = 'multiplication') -> pd.DataFrame:
@@ -111,35 +119,38 @@ class FeatureEngineer:
             if len(pair) != 2:
                 continue
                 
-            feat1, feat2 = pair[0], pair[1]
-            # Convert columns to list for safe membership testing
-            columns_list = list(self.data.columns)
-            if feat1 in columns_list and feat2 in columns_list:
-                new_feature = f"{feat1}_{interaction_type}_{feat2}"
+            feat1, feat2 = pair
+            valid_columns = self._validate_columns([feat1, feat2])
+            if len(valid_columns) != 2:
+                continue
                 
-                # Convert to numeric if needed
-                numeric_data = self._ensure_numeric([feat1, feat2])
+            # Convert to numeric if needed
+            numeric_data = self._ensure_numeric(valid_columns)
+            new_feature = f"{feat1}_{interaction_type}_{feat2}"
+            
+            if interaction_type == 'multiplication':
+                self.data[new_feature] = numeric_data[feat1] * numeric_data[feat2]
+            elif interaction_type == 'division':
+                denominator = numeric_data[feat2]
+                self.data[new_feature] = np.where(denominator != 0,
+                                                numeric_data[feat1] / denominator,
+                                                np.nan)
+            elif interaction_type == 'addition':
+                self.data[new_feature] = numeric_data[feat1] + numeric_data[feat2]
+            elif interaction_type == 'subtraction':
+                self.data[new_feature] = numeric_data[feat1] - numeric_data[feat2]
                 
-                if interaction_type == 'multiplication':
-                    self.data[new_feature] = numeric_data[feat1] * numeric_data[feat2]
-                elif interaction_type == 'division' and (self.data[feat2] != 0).all():
-                    self.data[new_feature] = numeric_data[feat1] / numeric_data[feat2]
-                elif interaction_type == 'addition':
-                    self.data[new_feature] = numeric_data[feat1] + numeric_data[feat2]
-                elif interaction_type == 'subtraction':
-                    self.data[new_feature] = numeric_data[feat1] - numeric_data[feat2]
-                
-                self.feature_info[new_feature] = {
-                    'type': 'interaction',
-                    'method': interaction_type,
-                    'features': [feat1, feat2]
-                }
+            self.feature_info[new_feature] = {
+                'type': 'interaction',
+                'method': interaction_type,
+                'features': [feat1, feat2]
+            }
                 
         return self.data
     
     def apply_pca(self,
                   columns: List[str],
-                  n_components: int = None,
+                  n_components: Optional[int] = None,
                   variance_ratio: float = 0.95) -> pd.DataFrame:
         """
         Apply PCA to specified columns.
@@ -152,19 +163,15 @@ class FeatureEngineer:
         Returns:
             pd.DataFrame: Dataset with PCA components added
         """
-        if not columns:
+        valid_columns = self._validate_columns(columns)
+        if not valid_columns:
             return self.data
             
-        # Initialize PCA
-        if n_components is None:
-            pca = PCA(n_components=variance_ratio, svd_solver='full')
-        else:
-            pca = PCA(n_components=n_components)
+        numeric_data = self._ensure_numeric(valid_columns)
             
-        # Fit and transform
-        pca_result = pca.fit_transform(self.data[columns])
-        
-        # Add PCA components to dataframe
+        pca = PCA(n_components=n_components if n_components is not None else variance_ratio)
+        pca_result = pca.fit_transform(numeric_data)
+            
         for i in range(pca_result.shape[1]):
             new_feature = f'pca_component_{i+1}'
             self.data[new_feature] = pca_result[:, i]
@@ -173,7 +180,7 @@ class FeatureEngineer:
                 'type': 'pca',
                 'explained_variance_ratio': pca.explained_variance_ratio_[i],
                 'cumulative_variance_ratio': sum(pca.explained_variance_ratio_[:i+1]),
-                'source_columns': columns
+                'source_columns': valid_columns
             }
             
         return self.data
@@ -193,17 +200,23 @@ class FeatureEngineer:
         Returns:
             pd.DataFrame: Dataset with polynomial features added
         """
+        valid_columns = self._validate_columns(columns)
+        if not valid_columns:
+            return self.data
+            
+        numeric_data = self._ensure_numeric(valid_columns)
+        
         poly = PolynomialFeatures(degree=degree, 
                                  interaction_only=interaction_only, 
                                  include_bias=False)
         
         # Generate polynomial features
-        poly_features = poly.fit_transform(self.data[columns])
-        feature_names = poly.get_feature_names_out(columns)
+        poly_features = poly.fit_transform(numeric_data)
+        feature_names = poly.get_feature_names_out(valid_columns)
         
         # Add new features to dataframe
         for i, name in enumerate(feature_names):
-            if name not in columns:  # Skip original features
+            if name not in valid_columns:  # Skip original features
                 new_feature = f'poly_{name}'
                 self.data[new_feature] = poly_features[:, i]
                 
