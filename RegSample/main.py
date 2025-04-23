@@ -85,11 +85,18 @@ def setup_output_directories(config: Dict[str, Any]) -> None:
                 config['output']['plots_path']]:
         Path(path).mkdir(parents=True, exist_ok=True)
 
-def run_preprocessing(data: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
-    """Run preprocessing steps based on configuration"""
+def preprocess_data(data: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Preprocess the data according to configuration"""
     preprocessor = DataPreprocessor(data)
     
-    # Handle missing values
+    # Handle mode configuration with default fallback
+    mode_config = config.get('mode', {})
+    preprocessor.use_inf_as_null = mode_config.get('use_inf_as_null', False)
+    
+    # Handle infinities based on configuration
+    preprocessor._handle_infinities()
+    
+    # Continue with rest of preprocessing
     if config['preprocessing']['missing_values']['strategy'] == 'auto':
         data = preprocessor.impute_missing_values(strategy='auto')
     else:
@@ -417,7 +424,7 @@ def safe_load_or_generate_data(config, input_file):
 
 def safe_run_preprocessing(data, config):
     try:
-        return run_preprocessing(data, config)
+        return preprocess_data(data, config)
     except Exception as e:
         logging.error(f"Preprocessing failed: {e}")
         raise

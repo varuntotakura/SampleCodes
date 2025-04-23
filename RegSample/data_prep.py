@@ -19,7 +19,16 @@ class DataPreprocessor:
         """
         self.data = data.copy()
         self.imputation_stats = {}  # Store imputation statistics for reference
+        self.scaling_stats = {}
+        # Set default value for use_inf_as_null if not in config
+        self.use_inf_as_null = False
         
+    def _handle_infinities(self):
+        """Handle infinite values in the dataset based on configuration"""
+        if self.use_inf_as_null:
+            self.data = self.data.replace([np.inf, -np.inf], np.nan)
+        return self.data
+
     def get_missing_info(self) -> pd.DataFrame:
         """
         Get comprehensive information about missing values in the dataset.

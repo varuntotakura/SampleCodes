@@ -7,6 +7,11 @@ data:
   synthetic_data:
     enable: false
 
+# Mode Configuration
+mode:
+  use_inf_as_null: false
+  handle_outliers: true
+
 # Preprocessing Configuration
 preprocessing:
   missing_values:
