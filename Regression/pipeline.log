@@ -1,0 +1,117 @@
+2025-04-23 13:28:19,653 - INFO - === Loading Data ===
+2025-04-23 13:28:19,769 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:28:19,770 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:28:19,893 - ERROR - Error in generate_report: name 'io' is not defined
+2025-04-23 13:28:19,895 - INFO - === Splitting Data ===
+2025-04-23 13:28:19,913 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:28:19,913 - INFO - === Preprocessing Data ===
+2025-04-23 13:28:20,333 - INFO - === Feature Engineering ===
+2025-04-23 13:28:20,353 - ERROR - Pipeline failed: 'operations'
+2025-04-23 13:30:18,283 - INFO - === Loading Data ===
+2025-04-23 13:30:18,389 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:30:18,389 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:30:20,759 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:30:20,760 - INFO - === Splitting Data ===
+2025-04-23 13:30:20,772 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:30:20,772 - INFO - === Preprocessing Data ===
+2025-04-23 13:30:21,170 - INFO - === Feature Engineering ===
+2025-04-23 13:30:21,183 - ERROR - Error in create_derived_features: 'list' object has no attribute 'items'
+2025-04-23 13:30:21,209 - ERROR - Error in create_derived_features: 'list' object has no attribute 'items'
+2025-04-23 13:30:21,209 - INFO - === Feature Selection ===
+2025-04-23 13:30:21,209 - ERROR - Pipeline failed: 'NoneType' object has no attribute 'copy'
+2025-04-23 13:32:47,849 - INFO - === Loading Data ===
+2025-04-23 13:32:47,975 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:32:47,977 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:32:50,111 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:32:50,111 - INFO - === Splitting Data ===
+2025-04-23 13:32:50,127 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:32:50,127 - INFO - === Preprocessing Data ===
+2025-04-23 13:32:50,552 - INFO - === Feature Engineering ===
+2025-04-23 13:32:50,624 - INFO - === Feature Selection ===
+2025-04-23 13:32:50,632 - ERROR - Error in select_k_best: Input contains NaN, infinity or a value too large for dtype('float64').
+2025-04-23 13:32:50,632 - ERROR - Pipeline failed: 'NoneType' object has no attribute 'columns'
+2025-04-23 13:35:07,886 - INFO - === Loading Data ===
+2025-04-23 13:35:07,988 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:35:07,988 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:35:10,319 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:35:10,319 - INFO - === Splitting Data ===
+2025-04-23 13:35:10,340 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:35:10,340 - INFO - === Preprocessing Data ===
+2025-04-23 13:35:10,775 - INFO - === Feature Engineering ===
+2025-04-23 13:35:10,820 - INFO - === Feature Selection ===
+2025-04-23 13:35:10,878 - INFO - === Training Models ===
+2025-04-23 13:35:10,878 - INFO - Training xgboost
+2025-04-23 13:35:10,878 - ERROR - Error in train_evaluate_model for xgboost: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+2025-04-23 13:35:10,878 - ERROR - Error in train_evaluate_model: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+2025-04-23 13:35:10,878 - ERROR - Error training xgboost: 'NoneType' object is not subscriptable
+2025-04-23 13:35:10,878 - INFO - === Saving Results ===
+2025-04-23 13:35:10,878 - WARNING - Saving results failed: 'NoneType' object is not subscriptable
+2025-04-23 13:35:10,878 - INFO - === Pipeline Complete ===
+2025-04-23 13:35:49,558 - INFO - === Loading Data ===
+2025-04-23 13:35:49,681 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:35:49,681 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:35:52,004 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:35:52,009 - INFO - === Splitting Data ===
+2025-04-23 13:35:52,010 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:35:52,010 - INFO - === Preprocessing Data ===
+2025-04-23 13:35:52,426 - INFO - === Feature Engineering ===
+2025-04-23 13:35:52,479 - INFO - === Feature Selection ===
+2025-04-23 13:35:52,528 - INFO - === Training Models ===
+2025-04-23 13:35:52,528 - INFO - Training xgboost
+2025-04-23 13:35:52,528 - ERROR - Error in train_evaluate_model for xgboost: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+2025-04-23 13:35:52,528 - ERROR - Error in train_evaluate_model: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+2025-04-23 13:35:52,541 - ERROR - Error training xgboost: 'NoneType' object is not subscriptable
+2025-04-23 13:35:52,541 - INFO - === Saving Results ===
+2025-04-23 13:35:52,541 - WARNING - Saving results failed: 'NoneType' object is not subscriptable
+2025-04-23 13:35:52,541 - INFO - === Pipeline Complete ===
+2025-04-23 13:36:51,443 - INFO - === Loading Data ===
+2025-04-23 13:36:51,548 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:36:51,548 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:36:53,958 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:36:53,958 - INFO - === Splitting Data ===
+2025-04-23 13:36:53,972 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:36:53,972 - INFO - === Preprocessing Data ===
+2025-04-23 13:36:54,437 - INFO - === Feature Engineering ===
+2025-04-23 13:36:54,478 - INFO - === Feature Selection ===
+2025-04-23 13:36:54,544 - INFO - === Training Models ===
+2025-04-23 13:36:54,544 - INFO - Training xgboost
+2025-04-23 13:36:54,560 - ERROR - Error in train_evaluate_model for xgboost: 'list' object cannot be interpreted as an integer
+2025-04-23 13:36:54,560 - ERROR - Error in train_evaluate_model: 'list' object cannot be interpreted as an integer
+2025-04-23 13:36:54,560 - ERROR - Error training xgboost: 'NoneType' object is not subscriptable
+2025-04-23 13:36:54,560 - INFO - === Saving Results ===
+2025-04-23 13:36:54,560 - WARNING - Saving results failed: 'NoneType' object is not subscriptable
+2025-04-23 13:36:54,560 - INFO - === Pipeline Complete ===
+2025-04-23 13:38:04,958 - INFO - === Loading Data ===
+2025-04-23 13:38:05,076 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:38:05,076 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:38:07,362 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:38:07,363 - INFO - === Splitting Data ===
+2025-04-23 13:38:07,377 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:38:07,377 - INFO - === Preprocessing Data ===
+2025-04-23 13:38:07,837 - INFO - === Feature Engineering ===
+2025-04-23 13:38:07,870 - INFO - === Feature Selection ===
+2025-04-23 13:38:07,926 - INFO - === Training Models ===
+2025-04-23 13:38:07,926 - INFO - Training xgboost
+2025-04-23 13:38:07,940 - ERROR - Error in train_evaluate_model for xgboost: 'list' object cannot be interpreted as an integer
+2025-04-23 13:38:07,940 - ERROR - Error in train_evaluate_model: 'list' object cannot be interpreted as an integer
+2025-04-23 13:38:07,940 - ERROR - Error training xgboost: 'NoneType' object is not subscriptable
+2025-04-23 13:38:07,940 - INFO - === Saving Results ===
+2025-04-23 13:38:07,947 - WARNING - Saving results failed: 'NoneType' object is not subscriptable
+2025-04-23 13:38:07,947 - INFO - === Pipeline Complete ===
+2025-04-23 13:39:40,957 - INFO - === Loading Data ===
+2025-04-23 13:39:41,081 - INFO - Data loaded: (1000, 209) - Memory usage: 1.31 MB
+2025-04-23 13:39:41,090 - INFO - === Exploratory Data Analysis ===
+2025-04-23 13:39:43,374 - ERROR - Error in generate_report: 'Series' object has no attribute 'normaltest'
+2025-04-23 13:39:43,374 - INFO - === Splitting Data ===
+2025-04-23 13:39:43,391 - INFO - Train shape: (800, 209), Test shape: (200, 209)
+2025-04-23 13:39:43,391 - INFO - === Preprocessing Data ===
+2025-04-23 13:39:44,151 - INFO - === Feature Engineering ===
+2025-04-23 13:39:44,182 - INFO - === Feature Selection ===
+2025-04-23 13:39:44,319 - INFO - === Training Models ===
+2025-04-23 13:39:44,325 - INFO - Training xgboost
+2025-04-23 13:39:44,341 - ERROR - Error in train_evaluate_model for xgboost: 'list' object cannot be interpreted as an integer
+2025-04-23 13:39:44,344 - ERROR - Error in train_evaluate_model: 'list' object cannot be interpreted as an integer
+2025-04-23 13:39:44,347 - ERROR - Error training xgboost: 'NoneType' object is not subscriptable
+2025-04-23 13:39:44,348 - INFO - === Saving Results ===
+2025-04-23 13:39:44,351 - WARNING - Saving results failed: 'NoneType' object is not subscriptable
+2025-04-23 13:39:44,352 - INFO - === Pipeline Complete ===

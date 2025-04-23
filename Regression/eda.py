@@ -58,6 +58,13 @@ class ExploratoryAnalysis:
         stats_dict = {}
 
         if col_type in ['numeric', 'boolean']:
+            # Add normality test
+            _, normality_p_value = stats.normaltest(self.data[column].dropna())
+            stats_dict.update({
+                'normality_test_p_value': normality_p_value,
+                'is_normal': normality_p_value > 0.05
+            })
+            
             stats_dict.update({
                 'count': self.data[column].count(),
                 'mean': self.data[column].mean(),
@@ -588,7 +595,7 @@ class ExploratoryAnalysis:
             plt.figure(figsize=(15, 5 * n_rows))
             plot_idx = 1
             for col in numeric_cols:
-                if col != target:
+                if (col != target):
                     plt.subplot(n_rows, 3, plot_idx)
                     plt.scatter(self.data[col], self.data[target], alpha=0.5)
                     plt.xlabel(col)

@@ -46,56 +46,72 @@ class FeatureEngineer:
         return numeric_data
 
     def create_derived_features(self, 
-                              operations: Dict[str, Dict[str, Union[List[str], str]]]) -> pd.DataFrame:
+                              operations: Union[Dict[str, Dict[str, Union[List[str], str]]], List[Dict[str, Any]]]) -> pd.DataFrame:
         """
         Create derived features based on mathematical operations.
         
         Args:
-            operations (Dict[str, Dict]): Dictionary defining derived features
-                Example: {
-                    'sum_features': {
-                        'columns': ['feat1', 'feat2'],
-                        'operation': 'sum'
-                    },
-                    'ratio_features': {
-                        'columns': ['feat1', 'feat2'],
-                        'operation': 'ratio'
+            operations: Can be either:
+                - Dict[str, Dict]: Dictionary defining derived features
+                    Example: {
+                        'sum_features': {
+                            'columns': ['feat1', 'feat2'],
+                            'operation': 'sum'
+                        }
                     }
-                }
+                - List[Dict[str, Any]]: List of operation definitions
+                    Example: [
+                        {
+                            'name': 'sum_features',
+                            'columns': ['feat1', 'feat2'],
+                            'operation': 'sum'
+                        }
+                    ]
         
         Returns:
             pd.DataFrame: Dataset with new derived features
         """
+        # Convert list format to dict format if needed
+        if isinstance(operations, list):
+            operations = {item['name']: {k: v for k, v in item.items() if k != 'name'}
+                        for item in operations}
+        
         for new_feature, params in operations.items():
             columns = params.get('columns', [])
             operation = params.get('operation', '').lower()
             
+            # Handle both string and list inputs for columns
             if isinstance(columns, str):
                 columns = [columns]
+            elif not isinstance(columns, (list, tuple)):
+                continue
                 
             valid_columns = self._validate_columns(columns)
             if not valid_columns:
                 continue
                 
-            if operation == 'sum':
-                self.data[new_feature] = self.data[valid_columns].sum(axis=1)
-            elif operation == 'mean':
-                self.data[new_feature] = self.data[valid_columns].mean(axis=1)
-            elif operation == 'ratio' and len(valid_columns) == 2:
-                denominator = self.data[valid_columns[1]]
-                self.data[new_feature] = np.where(denominator != 0,
-                                                self.data[valid_columns[0]] / denominator,
-                                                np.nan)
-            elif operation == 'difference' and len(valid_columns) == 2:
-                self.data[new_feature] = self.data[valid_columns[0]] - self.data[valid_columns[1]]
-            elif operation == 'product':
-                self.data[new_feature] = self.data[valid_columns].prod(axis=1)
+            try:
+                if operation == 'sum':
+                    self.data[new_feature] = self.data[valid_columns].sum(axis=1)
+                elif operation == 'mean':
+                    self.data[new_feature] = self.data[valid_columns].mean(axis=1)
+                elif operation == 'ratio' and len(valid_columns) == 2:
+                    denominator = self.data[valid_columns[1]]
+                    self.data[new_feature] = np.where(denominator != 0,
+                                                    self.data[valid_columns[0]] / denominator,
+                                                    np.nan)
+                elif operation == 'difference' and len(valid_columns) == 2:
+                    self.data[new_feature] = self.data[valid_columns[0]] - self.data[valid_columns[1]]
+                elif operation == 'product':
+                    self.data[new_feature] = self.data[valid_columns].prod(axis=1)
                 
-            self.feature_info[new_feature] = {
-                'type': 'derived',
-                'operation': operation,
-                'source_columns': valid_columns
-            }
+                self.feature_info[new_feature] = {
+                    'type': 'derived',
+                    'operation': operation,
+                    'source_columns': valid_columns
+                }
+            except Exception as e:
+                print(f"Error creating derived feature {new_feature}: {str(e)}")
             
         return self.data
     
