@@ -135,35 +135,45 @@ class FeatureSelector:
     
     def recursive_feature_elimination(self,
                                    target: str,
-                                   n_features: int = 10) -> pd.DataFrame:
+                                   n_features_to_select: int = 10,
+                                   step: int = 1,
+                                   estimator=None) -> pd.DataFrame:
         """
         Select features using Recursive Feature Elimination.
         
         Args:
             target (str): Target variable name
-            n_features (int): Number of features to select
+            n_features_to_select (int): Number of features to select
+            step (int): Number of features to remove at each iteration
+            estimator: Optional custom estimator (defaults to RandomForestRegressor)
             
         Returns:
             pd.DataFrame: Dataset with selected features
         """
-        X, y = self._prepare_numeric_data(target)
+        X = self.data.drop(columns=[target])
+        y = self.data[target]
         
-        # Initialize base estimator (Random Forest)
-        estimator = RandomForestRegressor(n_estimators=100, random_state=42)
+        if estimator is None:
+            estimator = RandomForestRegressor(n_estimators=100, random_state=42)
         
         # Initialize RFE
-        rfe = RFE(estimator=estimator, n_features_to_select=n_features)
+        rfe = RFE(estimator=estimator, 
+                  n_features_to_select=n_features_to_select,
+                  step=step)
+        
+        # Fit RFE
         rfe.fit(X, y)
         
-        # Get selected features
+        # Get selected feature names
         selected_features = X.columns[rfe.support_].tolist()
         
-        # Store rankings
+        # Store feature rankings
         self.feature_scores['rfe'] = {
             'rankings': dict(zip(X.columns, rfe.ranking_)),
             'selected_features': selected_features
         }
         
+        # Return data with selected features and target
         return self.data[selected_features + [target]]
     
     def random_forest_selection(self,

@@ -71,36 +71,59 @@ class FeatureEngineer:
             
         return self.data
     
+    def _ensure_numeric(self, columns: List[str]) -> pd.DataFrame:
+        """
+        Ensure columns are numeric, converting if necessary.
+        
+        Args:
+            columns (List[str]): Columns to check/convert
+            
+        Returns:
+            pd.DataFrame: Data with numeric columns
+        """
+        numeric_data = self.data[columns].copy()
+        for col in columns:
+            if not pd.api.types.is_numeric_dtype(numeric_data[col]):
+                numeric_data[col] = pd.to_numeric(numeric_data[col], errors='coerce')
+        return numeric_data
+
     def create_interaction_features(self,
-                                  feature_pairs: List[tuple],
+                                  feature_pairs: List[List[str]],
                                   interaction_type: str = 'multiplication') -> pd.DataFrame:
         """
         Create interaction features between specified pairs of features.
         
         Args:
-            feature_pairs (List[tuple]): List of feature pairs to interact
+            feature_pairs (List[List[str]]): List of feature pairs to interact
             interaction_type (str): Type of interaction ('multiplication', 'division', 'addition', 'subtraction')
             
         Returns:
             pd.DataFrame: Dataset with new interaction features
         """
-        for feat1, feat2 in feature_pairs:
+        for pair in feature_pairs:
+            if len(pair) != 2:
+                continue
+                
+            feat1, feat2 = pair[0], pair[1]
             if feat1 in self.data.columns and feat2 in self.data.columns:
                 new_feature = f"{feat1}_{interaction_type}_{feat2}"
                 
+                # Convert to numeric if needed
+                numeric_data = self._ensure_numeric([feat1, feat2])
+                
                 if interaction_type == 'multiplication':
-                    self.data[new_feature] = self.data[feat1] * self.data[feat2]
+                    self.data[new_feature] = numeric_data[feat1] * numeric_data[feat2]
                 elif interaction_type == 'division':
-                    self.data[new_feature] = self.data[feat1] / self.data[feat2].replace(0, np.nan)
+                    self.data[new_feature] = numeric_data[feat1] / numeric_data[feat2].replace(0, np.nan)
                 elif interaction_type == 'addition':
-                    self.data[new_feature] = self.data[feat1] + self.data[feat2]
+                    self.data[new_feature] = numeric_data[feat1] + numeric_data[feat2]
                 elif interaction_type == 'subtraction':
-                    self.data[new_feature] = self.data[feat1] - self.data[feat2]
+                    self.data[new_feature] = numeric_data[feat1] - numeric_data[feat2]
                 
                 self.feature_info[new_feature] = {
                     'type': 'interaction',
                     'method': interaction_type,
-                    'features': (feat1, feat2)
+                    'features': [feat1, feat2]
                 }
                 
         return self.data

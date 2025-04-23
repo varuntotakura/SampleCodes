@@ -1,7 +1,7 @@
 # Data Configuration
 data:
-  input_file: "housing.csv"  # Changed from null to use housing dataset
-  target_column: "median_house_value"  # Updated target column for housing dataset
+  input_file: "housing.csv"  # Now points to our downloaded dataset
+  target_column: "target"
   test_size: 0.2
   random_state: 42
   synthetic_data:
@@ -18,10 +18,10 @@ preprocessing:
 
 # Feature Engineering
 feature_engineering:
-  enable: True
+  enable: true
   methods:
     derived_features:
-      enable: True
+      enable: true
       operations:
         - name: "rooms_per_household"
           columns: ["AveRooms", "AveOccup"]
@@ -30,13 +30,14 @@ feature_engineering:
           columns: ["AveBedrms", "AveRooms"]
           operation: "ratio"
     interactions:
-      enable: True
+      enable: true
       feature_pairs: [["MedInc", "AveRooms"], ["Population", "AveOccup"]]
+      interaction_type: "multiplication"  # Fixed: Added interaction_type
     pca:
-      enable: True
+      enable: true
       n_components: 5
     polynomial:
-      enable: True
+      enable: true
       degree: 2
       interaction_only: false
 
@@ -66,7 +67,7 @@ feature_selection:
     - name: rfe
       enable: true
       params:
-        n_features_to_select: 10
+        n_features_to_select: 5
         step: 1
 
 # Model Configuration
@@ -172,21 +173,21 @@ models:
       random_state: [42]
 
   - name: 'knn'
-    enable: True
+    enable: true
     params:
-      n_neighbors: [3, 5, 7, 9, 11]
+      n_neighbors: [3, 5, 7, 9]
       weights: ['uniform', 'distance']
-      algorithm: ['auto', 'ball_tree', 'kd_tree', 'brute']
-      leaf_size: [20, 30, 40]
-      p: [1, 2]  # 1 for Manhattan, 2 for Euclidean
+      algorithm: ['auto']
+      leaf_size: [20, 30]
+      p: [1, 2]
       metric: ['minkowski']
       n_jobs: [-1]
 
 # Hyperparameter Tuning
 tuning:
   method: random  # 'random' or 'grid'
-  cv_folds: 1
-  n_iter: 2  # for random search
+  cv_folds: 2  # Changed from 1 to 5
+  n_iter: 2  # Increased from 2 to 10 for better random search
   scoring: neg_mean_squared_error
 
 # Model Evaluation
