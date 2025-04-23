@@ -314,7 +314,11 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
             'train_r2': model_results['train_results']['r2'],
             'test_r2': model_results['test_results']['r2'],
             'train_mse': model_results['train_results']['mse'],
-            'test_mse': model_results['test_results']['mse']
+            'test_mse': model_results['test_results']['mse'],
+            'train_mae': model_results['train_results']['mae'],
+            'test_mae': model_results['test_results']['mae'],
+            'train_explained_variance': model_results['train_results']['explained_variance'],
+            'test_explained_variance': model_results['test_results']['explained_variance'],
         }
         
         # Add best parameters to results
@@ -325,25 +329,52 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
         results_df = pd.concat([results_df, pd.DataFrame([model_metrics])])
     
     # Save results CSV
-    results_csv_path = output_dir / 'model_results.csv'
+    results_csv_path = output_dir / f"{args.model}_{args.feature_selection}_{args.tune_method}_results.csv"
     results_df.to_csv(results_csv_path, index=False)
     print(f"Results saved to {results_csv_path}")
     
     # Save models to model directory
     for model_name, model_results in results.items():
         if 'model' in model_results:
-            model_path = model_dir / f"{model_name}_model.pkl"
+            # Save model
+            model_filename = f"{model_name}_{args.feature_selection}_{args.tune_method}_model.pkl"
+            model_path = model_dir / model_filename
             try:
                 from create_model import ModelBuilder
                 ModelBuilder.save_model(model_results['model'], model_path)
                 print(f"Model saved to {model_path}")
+                
+                # Save best configuration in YAML
+                best_config = {
+                    'model': model_name,
+                    'feature_selection': args.feature_selection,
+                    'tuning_method': args.tune_method,
+                    'best_params': model_results['best_params'] if 'best_params' in model_results else {},
+                    'training_metrics': {
+                        'r2': model_results['train_results']['r2'],
+                        'mse': model_results['train_results']['mse'],
+                        'mae': model_results['train_results']['mae'],
+                        'explained_variance': model_results['train_results']['explained_variance']
+                    },
+                    'test_metrics': {
+                        'r2': model_results['test_results']['r2'],
+                        'mse': model_results['test_results']['mse'],
+                        'mae': model_results['test_results']['mae'],
+                        'explained_variance': model_results['test_results']['explained_variance']
+                    }
+                }
+                config_path = model_dir / f"{model_name}_{args.feature_selection}_{args.tune_method}_config.yaml"
+                with open(config_path, 'w') as f:
+                    yaml.dump(best_config, f, default_flow_style=False)
+                print(f"Best configuration saved to {config_path}")
+                
             except Exception as e:
                 print(f"Error saving model {model_name}: {e}")
     
     # Save detailed evaluation results
     for model_name, model_results in results.items():
         if 'evaluation' in model_results:
-            eval_path = output_dir / f'{model_name}_evaluation.yaml'
+            eval_path = output_dir / f'{model_name}_{args.feature_selection}_{args.tune_method}_evaluation.yaml'
             with open(eval_path, 'w') as f:
                 yaml.dump(model_results['evaluation'], f)
             print(f"Evaluation results saved to {eval_path}")
@@ -482,8 +513,139 @@ def safe_save_results(results, config):
     except Exception as e:
         logging.warning(f"Saving results failed: {e}")
 
+def run_evaluation(model_path, data_path, config):
+    """
+    Run evaluation on a saved model
+    
+    Args:
+        model_path (str): Path to the saved model file
+        data_path (str): Path to the data file for evaluation
+        config (dict): Configuration dictionary
+    """
+    print(f"\n=== Evaluating Saved Model: {model_path} ===")
+    # Load the data
+    data = pd.read_csv(data_path)
+    target_col = config['data']['target_column']
+    X_eval = data.drop(columns=[target_col])
+    y_eval = data[target_col]
+    
+    # Load the model
+    try:
+        from create_model import ModelBuilder
+        model = ModelBuilder.load_model(model_path)
+        
+        # Create evaluator
+        y_pred = model.predict(X_eval)
+        evaluator = ModelEvaluator(y_eval, y_pred, config)
+        
+        # Run evaluation
+        eval_results = evaluator.get_complete_evaluation(X_eval)
+        
+        # Save evaluation results
+        output_dir = Path(config['output']['results_path'])
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        model_name = os.path.basename(model_path).replace('_model.pkl', '')
+        eval_path = output_dir / f'{model_name}_evaluation.yaml'
+        with open(eval_path, 'w') as f:
+            yaml.dump(eval_results, f)
+        
+        print(f"Evaluation results saved to {eval_path}")
+        return eval_results
+    except Exception as e:
+        print(f"Error evaluating model: {e}")
+        return None
+
+def run_and_log_all_commands(commands_file):
+    """
+    Run all commands from a file and log the results
+    
+    Args:
+        commands_file (str): Path to file containing commands
+    """
+    with open(commands_file, 'r') as f:
+        commands = f.readlines()
+    
+    results_log = []
+    for i, cmd in enumerate(commands):
+        cmd = cmd.strip()
+        if not cmd or cmd.startswith('#'):
+            continue
+            
+        print(f"\n{'='*80}")
+        print(f"Running command {i+1}/{len(commands)}: {cmd}")
+        print(f"{'='*80}")
+        
+        try:
+            os.system(cmd)
+            results_log.append(f"Command {i+1}: {cmd} - SUCCESS")
+        except Exception as e:
+            results_log.append(f"Command {i+1}: {cmd} - FAILED: {str(e)}")
+    
+    # Write results log
+    with open('command_results.log', 'w') as f:
+        f.write('\n'.join(results_log))
+    
+    print(f"\n{'='*80}")
+    print(f"All commands completed. Results logged to command_results.log")
+    print(f"{'='*80}")
+
+def consolidate_results(results_dir='results'):
+    """
+    Consolidate all model results into a single CSV file
+    
+    Args:
+        results_dir (str): Directory containing results files
+    """
+    results_path = Path(results_dir)
+    if not results_path.exists():
+        print(f"Results directory {results_dir} does not exist")
+        return
+        
+    # Find all CSV files
+    csv_files = list(results_path.glob('*.csv'))
+    if not csv_files:
+        print(f"No CSV files found in {results_dir}")
+        return
+        
+    # Combine all CSV files
+    all_results = []
+    for csv_file in csv_files:
+        try:
+            df = pd.read_csv(csv_file)
+            # Add filename as source column
+            df['source_file'] = csv_file.name
+            all_results.append(df)
+        except Exception as e:
+            print(f"Error reading {csv_file}: {e}")
+            
+    if not all_results:
+        print("No results could be loaded")
+        return
+        
+    # Combine all results
+    consolidated = pd.concat(all_results, ignore_index=True)
+    
+    # Save consolidated results
+    output_path = results_path / 'consolidated_results.csv'
+    consolidated.to_csv(output_path, index=False)
+    print(f"Consolidated results saved to {output_path}")
+    
+    return consolidated
+
+def check_and_create_directories():
+    """Create all required directories if they don't exist"""
+    required_dirs = ['models', 'plots', 'results', 'logs']
+    for dir_name in required_dirs:
+        dir_path = Path(dir_name)
+        dir_path.mkdir(parents=True, exist_ok=True)
+        print(f"Ensured directory exists: {dir_path.absolute()}")
+
 def main():
     """Main execution function"""
+    # Create required directories first
+    check_and_create_directories()
+    
     # Parse arguments and load config
     args = parse_arguments()
     config = load_config(args.config)
@@ -502,6 +664,15 @@ def main():
     if args.tune_method:
         config['tuning']['method'] = args.tune_method
     
+    # Normalize feature selection methods for consistency
+    if args.feature_selection:
+        # Convert hyphens to underscores for method names
+        args.feature_selection = args.feature_selection.replace('-', '_')
+        # Fix incorrect feature selection method names
+        if args.feature_selection == 'knn':
+            args.feature_selection = 'k_best'  # Default to k_best if knn is specified
+        print(f"Using feature selection method: {args.feature_selection}")
+        
     # Setup environment
     setup_logging(config)
     setup_output_directories(config)
@@ -520,7 +691,9 @@ def main():
         return
     
     # Load or generate data
+    print("\n=== Loading Data ===")
     data = safe_load_or_generate_data(config, args.input_file)
+    print(f"Data loaded: {data.shape} - Memory usage: {data.memory_usage().sum() / 1024**2:.2f} MB")
     
     # EDA usage (before preprocessing)
     try:
@@ -532,19 +705,42 @@ def main():
         logging.warning(f"EDA failed or not available: {e}")
     
     # Preprocessing
+    print("\n=== Preprocessing Data ===")
     data = safe_run_preprocessing(data, config)
+    print(f"After preprocessing: {data.shape}")
     
     # Feature engineering
+    print("\n=== Feature Engineering ===")
     data = safe_run_feature_engineering(data, config)
+    print(f"After feature engineering: {data.shape}")
     
     # Feature selection
+    print("\n=== Feature Selection ===")
     data = safe_run_feature_selection(data, config, args.feature_selection)
+    print(f"After feature selection: {data.shape}")
     
     # Model pipeline
+    print(f"\n=== Training Model: {args.model} ===")
     results = safe_run_model_pipeline(data, config, args.model, args.tune_method)
     
     # Save results
+    print("\n=== Saving Results ===")
     safe_save_results(results, config)
+    print("\n=== Process Complete ===")
+    
+    # Print a summary of the results
+    if results:
+        print("\n=== Results Summary ===")
+        for model_name, model_results in results.items():
+            print(f"Model: {model_name}")
+            print(f"  Training R²: {model_results['train_results']['r2']:.4f}")
+            print(f"  Test R²: {model_results['test_results']['r2']:.4f}")
+            print(f"  Training MSE: {model_results['train_results']['mse']:.4f}")
+            print(f"  Test MSE: {model_results['test_results']['mse']:.4f}")
+            if 'best_params' in model_results:
+                print("  Best parameters:")
+                for param, value in model_results['best_params'].items():
+                    print(f"    {param}: {value}")
 
 if __name__ == "__main__":
     main()

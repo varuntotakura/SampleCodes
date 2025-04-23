@@ -105,7 +105,9 @@ class FeatureEngineer:
                 continue
                 
             feat1, feat2 = pair[0], pair[1]
-            if feat1 in self.data.columns and feat2 in self.data.columns:
+            # Convert columns to a list to avoid ambiguous truth value with pandas Index
+            data_columns = list(self.data.columns)
+            if feat1 in data_columns and feat2 in data_columns:
                 new_feature = f"{feat1}_{interaction_type}_{feat2}"
                 
                 # Convert to numeric if needed
@@ -249,7 +251,7 @@ class FeatureEngineer:
         if len(numeric_cols) == 0:
             return self.data
             
-        # Initialize selector
+        # Initialize selector with score_func parameter correctly positioned
         selector = SelectKBest(score_func=f_regression, k=k)
         
         # Fit and transform
@@ -261,13 +263,13 @@ class FeatureEngineer:
         selected_mask = selector.get_support()
         selected_names = numeric_cols[selected_mask].tolist()
         
-        # Store feature scores
-        for name, score in zip(numeric_cols, selector.scores_):
+        # Store feature scores correctly
+        for i, name in enumerate(numeric_cols):
             if name in selected_names:
                 self.feature_info[name] = {
                     'type': 'selected',
-                    'f_score': score,
-                    'p_value': selector.pvalues_[numeric_cols.get_loc(name)]
+                    'f_score': selector.scores_[i],
+                    'p_value': selector.pvalues_[i]
                 }
         
         return self.data[selected_names + [target]]

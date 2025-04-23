@@ -190,6 +190,13 @@ class ModelBuilder:
         """
         params = custom_params if custom_params is not None else {}
         
+        # Filter out problematic parameters
+        params = {k: v for k, v in params.items() if not k.startswith('mode.')}
+        
+        # Handle specific XGBoost parameter naming changes
+        if 'use_inf_as_null' in params:
+            params['use_inf_as_na'] = params.pop('use_inf_as_null')
+        
         if model_type == 'linear':
             return LinearRegression(**params)
         elif model_type == 'logistic':
@@ -198,6 +205,8 @@ class ModelBuilder:
             return Lasso(**params)
         elif model_type == 'ridge':
             return Ridge(**params)
+        elif model_type == 'elastic_net':
+            return ElasticNet(**params)
         elif model_type == 'random_forest':
             return RandomForestRegressor(**params)
         elif model_type == 'svr':
@@ -208,17 +217,16 @@ class ModelBuilder:
             return AdaBoostRegressor(**params)
         elif model_type == 'bagging':
             return BaggingRegressor(**params)
+        elif model_type == 'gradient_boosting':
+            return GradientBoostingRegressor(**params)
         elif model_type == 'xgboost':
             try:
-                # Remove problematic parameter if present
-                if 'mode.use_inf_as_null' in params:
-                    del params['mode.use_inf_as_null']
                 return xgb.XGBRegressor(**params)
             except TypeError as e:
-                # Handle any other XGBoost parameter errors
-                logging.warning(f"XGBoost parameter error: {str(e)}")
+                print(f"Warning: XGBoost parameter error suppressed: {str(e)}")
+                # Fall back to default parameters if there's an error
                 filtered_params = {k: v for k, v in params.items() 
-                                if not k.startswith('mode.')}
+                                  if k in ['n_estimators', 'max_depth', 'learning_rate', 'subsample']}
                 return xgb.XGBRegressor(**filtered_params)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
