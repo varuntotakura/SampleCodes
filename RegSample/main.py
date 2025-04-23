@@ -165,7 +165,16 @@ def run_feature_selection(data: pd.DataFrame, config: Dict[str, Any],
     selector = FeatureSelector(data)
     target = config['data']['target_column']
     
-    # Get methods to run
+    # Prioritize RFE for feature selection
+    rfe_method = next((m for m in config['feature_selection']['methods'] if m['name'] == 'rfe'), None)
+    if rfe_method and (not method_override or method_override == 'rfe'):
+        data = selector.recursive_feature_elimination(
+            target=target,
+            **rfe_method['params']
+        )
+        return data
+
+    # Fallback to other methods if RFE is not prioritized
     methods = [m for m in config['feature_selection']['methods'] 
               if not method_override or m['name'] == method_override]
     
@@ -385,15 +394,18 @@ def validate_config(config: Dict[str, Any]) -> bool:
         if section not in config:
             logging.error(f"Missing required config section: {section}")
             return False
-    # Check for required keys in data
+            
+    # Check for required keys in data section
     for key in ['target_column', 'test_size', 'random_state']:
         if key not in config['data']:
             logging.error(f"Missing required data config key: {key}")
             return False
-    # Check for at least one enabled model
-    if not any(m.get('enable', False) for m in config['models'].values()):
+            
+    # Check for at least one enabled model in the models list
+    if not any(m.get('enable', False) for m in config['models']):
         logging.error("No models enabled in config['models'].")
         return False
+        
     return True
 
 def safe_load_or_generate_data(config, input_file):

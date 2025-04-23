@@ -181,9 +181,65 @@ class ModelBuilder:
         """
         Create a model instance with specified parameters.
         
+<<<<<<< HEAD
+<<<<<<< HEAD
+        if model_type == 'knn':
+            from sklearn.neighbors import KNeighborsRegressor
+            model = KNeighborsRegressor(**all_params)
+        elif model_type == 'xgboost':
+            import xgboost as xgb
+            try:
+                all_params.update(fixed_params)
+                all_params.update(params)
+                model = xgb.XGBRegressor(**all_params)
+            except KeyError as e:
+                if str(e) == "'mode.use_inf_as_null'":
+                    logging.warning("Skipping mode.use_inf_as_null parameter")
+                    all_params = {k: v for k, v in all_params.items() if k != 'mode.use_inf_as_null'}
+                    model = xgb.XGBRegressor(**all_params)
+                else:
+                    raise e
+        elif model_type == 'adaboost':
+            from sklearn.ensemble import AdaBoostRegressor
+            from sklearn.tree import DecisionTreeRegressor
+            base_estimator = DecisionTreeRegressor(max_depth=3)
+            model = AdaBoostRegressor(base_estimator=base_estimator, **all_params)
+        elif model_type == 'linear':
+            from sklearn.linear_model import LinearRegression
+            model = LinearRegression(**all_params)
+        elif model_type == 'lasso':
+            from sklearn.linear_model import Lasso
+            model = Lasso(**all_params)
+        elif model_type == 'ridge':
+            from sklearn.linear_model import Ridge
+            model = Ridge(**all_params)
+        elif model_type == 'elastic_net':
+            from sklearn.linear_model import ElasticNet
+            model = ElasticNet(**all_params)
+        elif model_type == 'svr':
+            from sklearn.svm import SVR
+            # Scale features for SVR
+            if not hasattr(self, 'scaler'):
+                self.scaler = StandardScaler()
+            model = SVR(**all_params)
+        elif model_type == 'random_forest':
+            from sklearn.ensemble import RandomForestRegressor
+            model = RandomForestRegressor(**all_params)
+        elif model_type == 'gradient_boosting':
+            from sklearn.ensemble import GradientBoostingRegressor
+            model = GradientBoostingRegressor(**all_params)
+        else:
+            raise ValueError(f"Unsupported model type: {model_type}")
+=======
         Args:
             model_type (str): Type of model to create
             custom_params (Dict): Custom parameters for the model
+>>>>>>> parent of 3e0c743 (Add Full Pipeline)
+=======
+        Args:
+            model_type (str): Type of model to create
+            custom_params (Dict): Custom parameters for the model
+>>>>>>> parent of 3e0c743 (Add Full Pipeline)
             
         Returns:
             Any: Created model instance

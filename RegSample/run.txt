@@ -1,0 +1,13 @@
+python main.py --config config.yaml --model xgboost --feature-selection k-best --tune-method random
+python main.py --config config.yaml --model adaboost --feature-selection k-best --tune-method grid
+python main.py --config config.yaml --model linear --feature-selection k_best --tune-method grid
+python main.py --config config.yaml --model linear --feature-selection lasso --tune-method grid
+python main.py --config config.yaml --model linear --feature-selection random_forest --tune-method grid
+python main.py --config config.yaml --model linear --feature-selection vif --tune-method grid
+python main.py --config config.yaml --model random_forest --feature-selection vif --tune-method grid
+python main.py --config config.yaml --model gradient_boosting --feature-selection vif --tune-method grid
+python main.py --config config.yaml --model lasso --feature-selection knn --tune-method grid
+python main.py --config config.yaml --model ridge --feature-selection knn --tune-method grid
+python main.py --config config.yaml --model elastic_net --feature-selection knn --tune-method grid
+python main.py --config config.yaml --model svr --feature-selection knn --tune-method grid
+python main.py --config config.yaml --model knn --feature-selection rfe --tune-method random

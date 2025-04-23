@@ -1,186 +1,193 @@
 # Data Configuration
 data:
-  input_file: 'data.csv'  # or null for synthetic data
-  target_column: 'target'
+  input_file: "housing.csv"  # Changed from null to use housing dataset
+  target_column: "median_house_value"  # Updated target column for housing dataset
   test_size: 0.2
   random_state: 42
   synthetic_data:
-    n_samples: 1000
-    n_features: 20
-    noise: 0.1
+    enable: false
 
 # Preprocessing Configuration
 preprocessing:
-  scaling: 'standard'  # 'standard', 'minmax', 'robust', or null
-  handle_missing: true
-  feature_engineering:
-    polynomial_features: false
-    interaction_features: false
-  
+  missing_values:
+    strategy: "auto"
+    custom_rules: {}
+  scaling:
+    method: "standard"
+    target_range: [-1, 1]
+
+# Feature Engineering
+feature_engineering:
+  enable: True
+  methods:
+    derived_features:
+      enable: True
+      operations:
+        - name: "rooms_per_household"
+          columns: ["AveRooms", "AveOccup"]
+          operation: "ratio"
+        - name: "bedrooms_ratio"
+          columns: ["AveBedrms", "AveRooms"]
+          operation: "ratio"
+    interactions:
+      enable: True
+      feature_pairs: [["MedInc", "AveRooms"], ["Population", "AveOccup"]]
+    pca:
+      enable: True
+      n_components: 5
+    polynomial:
+      enable: True
+      degree: 2
+      interaction_only: false
+
 # Feature Selection
 feature_selection:
-  method: 'none'  # 'none', 'k_best', 'percentile', 'from_model'
-  params:
-    k: 10
-    percentile: 20
-    threshold: 'mean'
+  enable: true
+  methods:
+    - name: k_best
+      enable: true
+      params:
+        k: 10
+        score_func: f_regression
+    - name: lasso
+      enable: true
+      params:
+        alpha: [0.001, 0.01, 0.1, 1.0]
+        threshold: 0.01
+    - name: random_forest
+      enable: true
+      params:
+        n_estimators: 100
+        threshold: 0.01
+    - name: vif
+      enable: true
+      params:
+        threshold: 5.0
+    - name: rfe
+      enable: true
+      params:
+        n_features_to_select: 10
+        step: 1
 
 # Model Configuration
 models:
-  linear:
+  - name: 'xgboost'
+    enable: true
+    fixed_params:  # Parameters that don't need tuning
+      objective: "reg:squarederror"
+      nthread: -1
+    params:  # Parameters to tune
+      max_depth: [3, 5, 7]
+      learning_rate: [0.01, 0.1, 0.3]
+      n_estimators: [100, 200]
+      subsample: [0.8, 1.0]
+      colsample_bytree: [0.8, 1.0]
+      min_child_weight: [1, 3, 5]
+
+  - name: 'adaboost'
     enable: true
     params:
-      fit_intercept: true
-      copy_X: true
-      n_jobs: null
-      positive: false
+      n_estimators: [50, 100, 200]
+      learning_rate: [0.01, 0.1, 0.5, 1.0]
+      loss: ['linear', 'square', 'exponential']
 
-  logistic:
-    enable: false
-    params:
-      penalty: 'l2'
-      C: 1.0
-      fit_intercept: true
-      solver: 'lbfgs'
-      max_iter: 100
-      multi_class: 'auto'
-      warm_start: false
-      l1_ratio: null
-
-  lasso:
+  - name: 'linear'
     enable: true
     params:
-      alpha: 1.0
-      fit_intercept: true
-      max_iter: 1000
-      tol: 0.0001
-      warm_start: false
-      selection: 'cyclic'
-      random_state: 42
+      fit_intercept: [true, false]
+      normalize: [true, false]
+      copy_X: [true]
+      n_jobs: [-1]
+      positive: [false]
 
-  ridge:
-    enable: true
+  - name: 'lasso'
+    enable: True
     params:
-      alpha: 1.0
-      fit_intercept: true
-      max_iter: null
-      tol: 0.001
-      solver: 'auto'
-      random_state: 42
+      alpha: [0.001, 0.01, 0.1, 1.0]
+      fit_intercept: [True]
+      max_iter: [1000]
+      tol: [0.0001]
+      selection: ['cyclic']
+      random_state: [42]
 
-  elastic_net:
-    enable: true
+  - name: 'ridge'
+    enable: True
     params:
-      alpha: 1.0
-      l1_ratio: 0.5
-      fit_intercept: true
-      max_iter: 1000
-      tol: 0.0001
-      warm_start: false
-      random_state: 42
-      selection: 'cyclic'
+      alpha: [0.001, 0.01, 0.1, 1.0]
+      fit_intercept: [True]
+      max_iter: [1000]
+      tol: [0.001]
+      solver: ['auto']
+      random_state: [42]
 
-  random_forest:
-    enable: true
+  - name: 'elastic_net'
+    enable: True
     params:
-      n_estimators: 100
-      max_depth: null
-      min_samples_split: 2
-      min_samples_leaf: 1
-      max_features: 'auto'
-      bootstrap: true
-      criterion: 'squared_error'
-      max_leaf_nodes: null
-      min_impurity_decrease: 0.0
-      warm_start: false
-      n_jobs: -1
-      random_state: 42
+      alpha: [0.001, 0.01, 0.1, 1.0]
+      l1_ratio: [0.1, 0.5, 0.7, 0.9]
+      fit_intercept: [True]
+      max_iter: [1000]
+      tol: [0.0001]
+      selection: ['cyclic']
+      random_state: [42]
 
-  svr:
-    enable: true
+  - name: 'svr'
+    enable: True
     params:
-      kernel: 'rbf'
-      C: 1.0
-      epsilon: 0.1
-      gamma: 'scale'
-      tol: 0.001
-      shrinking: true
-      cache_size: 200
-      max_iter: -1
+      C: [0.1, 1.0, 10.0]
+      epsilon: [0.1, 0.2, 0.3]
+      kernel: ['rbf', 'linear']
+      gamma: ['scale', 'auto']
+      tol: [0.001]
+      max_iter: [1000]
 
-  knn:
-    enable: true
+  - name: 'random_forest'
+    enable: True
     params:
-      n_neighbors: 5
-      weights: 'uniform'
-      algorithm: 'auto'
-      leaf_size: 30
-      p: 2
-      metric: 'minkowski'
-      n_jobs: -1
+      n_estimators: [100, 200, 500]
+      max_depth: [null, 10, 20]
+      min_samples_split: [2, 5]
+      min_samples_leaf: [1, 2]
+      max_features: ['auto', 'sqrt']
+      bootstrap: [True]
+      criterion: ['squared_error']
+      max_leaf_nodes: [null]
+      min_impurity_decrease: [0.0]
+      warm_start: [False]
+      n_jobs: [-1]
+      random_state: [42]
 
-  adaboost:
-    enable: true
+  - name: 'gradient_boosting'
+    enable: True
     params:
-      n_estimators: 50
-      learning_rate: 1.0
-      loss: 'linear'
-      random_state: 42
+      n_estimators: [100, 200]
+      learning_rate: [0.1]
+      max_depth: [3, 5]
+      min_samples_split: [2]
+      min_samples_leaf: [1]
+      subsample: [0.8]
+      max_features: ['auto']
+      criterion: ['friedman_mse']
+      loss: ['squared_error']
+      random_state: [42]
 
-  bagging:
-    enable: true
+  - name: 'knn'
+    enable: True
     params:
-      n_estimators: 10
-      max_samples: 1.0
-      max_features: 1.0
-      bootstrap: true
-      bootstrap_features: false
-      n_jobs: -1
-      random_state: 42
-      warm_start: false
-
-  xgboost:
-    enable: true
-    params:
-      n_estimators: 100
-      max_depth: 3
-      learning_rate: 0.1
-      subsample: 1.0
-      colsample_bytree: 1.0
-      colsample_bylevel: 1.0
-      min_child_weight: 1
-      gamma: 0
-      reg_alpha: 0
-      reg_lambda: 1
-      tree_method: 'auto'
-      booster: 'gbtree'
-      random_state: 42
-      n_jobs: -1
-
-  gradient_boosting:
-    enable: true
-    params:
-      n_estimators: 100
-      learning_rate: 0.1
-      max_depth: 3
-      min_samples_split: 2
-      min_samples_leaf: 1
-      subsample: 1.0
-      max_features: 'auto'
-      criterion: 'friedman_mse'
-      loss: 'squared_error'
-      random_state: 42
-      warm_start: false
-      validation_fraction: 0.1
-      n_iter_no_change: null
-      tol: 0.0001
+      n_neighbors: [3, 5, 7, 9, 11]
+      weights: ['uniform', 'distance']
+      algorithm: ['auto', 'ball_tree', 'kd_tree', 'brute']
+      leaf_size: [20, 30, 40]
+      p: [1, 2]  # 1 for Manhattan, 2 for Euclidean
+      metric: ['minkowski']
+      n_jobs: [-1]
 
 # Hyperparameter Tuning
 tuning:
-  method: 'random'  # 'random' or 'grid'
-  cv_folds: 5
-  n_iter: 100  # for random search
-  scoring: 'neg_mean_squared_error'
+  method: random  # 'random' or 'grid'
+  cv_folds: 1
+  n_iter: 2  # for random search
+  scoring: neg_mean_squared_error
 
 # Model Evaluation
 evaluation:
@@ -191,26 +198,29 @@ evaluation:
     - 'r2'
     - 'explained_variance'
   analysis:
-    learning_curves: true
-    validation_curves: true
-    feature_importance: true
-    prediction_error: true
+    learning_curves: True
+    validation_curves: True
+    feature_importance: True
+    prediction_error: True
+    residuals: True
+    outliers: True
+    cross_validation: True
   plots:
-    residuals: true
-    learning_curves: true
-    validation_curves: true
-    feature_importance: true
-    prediction_error: true
+    residuals: True
+    learning_curves: True
+    validation_curves: True
+    feature_importance: True
+    prediction_error: True
 
 # Output Configuration
 output:
-  save_model: true
-  results_path: 'results'
-  model_path: 'models'
-  plots_path: 'plots'
-  log_level: 'INFO'
+  save_model: True
+  results_path: results
+  model_path: models
+  plots_path: plots
+  log_level: INFO
 
 # Hardware Configuration
 hardware:
-  use_gpu: false
+  use_gpu: False
   n_jobs: -1  # -1 for using all available cores

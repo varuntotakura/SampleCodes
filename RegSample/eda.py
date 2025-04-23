@@ -420,3 +420,23 @@ class ExploratoryAnalysis:
         }
         
         return results
+
+    def basic_summary(self):
+        """Print basic summary statistics of the dataset"""
+        print("\nDataset Info:")
+        print(self.data.info())
+        
+        print("\nNumerical Features Summary:")
+        print(self.data.describe())
+        
+        print("\nMissing Values:")
+        missing = self.data.isnull().sum()
+        if missing.any():
+            print(missing[missing > 0])
+        else:
+            print("No missing values found")
+            
+        print("\nFeature Correlations with Target:")
+        target = self.data.columns[-1]  # Assuming target is the last column
+        correlations = self.data.corr()[target].sort_values(ascending=False)
+        print(correlations)
