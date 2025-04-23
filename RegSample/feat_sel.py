@@ -89,7 +89,7 @@ class FeatureSelector:
     
     def lasso_selection(self,
                        target: str,
-                       alpha: float = None,
+                       alpha: float = 0.1,
                        threshold: float = 1e-5) -> pd.DataFrame:
         """
         Select features using Lasso regularization.
@@ -120,6 +120,11 @@ class FeatureSelector:
         
         # Get selected features
         selected_features = X.columns[abs(lasso.coef_) > threshold].tolist()
+        
+        # Ensure we have at least one feature
+        if len(selected_features) == 0:
+            # If no features meet the threshold, select the one with the highest coefficient
+            selected_features = [X.columns[np.argmax(abs(lasso.coef_))]]
         
         # Store coefficients
         self.feature_scores['lasso'] = {
@@ -175,21 +180,29 @@ class FeatureSelector:
     
     def random_forest_selection(self,
                               target: str,
-                              n_features: int = 10) -> pd.DataFrame:
+                              n_features: int = 10,
+                              **kwargs) -> pd.DataFrame:
         """
         Select features using Random Forest importance.
         
         Args:
             target (str): Target variable name
             n_features (int): Number of features to select
+            **kwargs: Additional parameters for RandomForestRegressor
             
         Returns:
             pd.DataFrame: Dataset with selected features
         """
         X, y = self._prepare_numeric_data(target)
         
+        # Train Random Forest with default parameters
+        rf_params = {'n_estimators': 100, 'random_state': 42}
+        
+        # Update with any passed parameters
+        rf_params.update(kwargs)
+        
         # Train Random Forest
-        rf = RandomForestRegressor(n_estimators=100, random_state=42)
+        rf = RandomForestRegressor(**rf_params)
         rf.fit(X, y)
         
         # Get feature importance scores

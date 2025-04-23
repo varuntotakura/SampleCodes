@@ -842,6 +842,14 @@ def run_batch_commands(run_file_path=None):
     except Exception as e:
         logging.error(f"Failed to consolidate results: {str(e)}")
 
+def run_pipeline_step(step_function, *args, **kwargs):
+    """Helper function to run a pipeline step with error handling."""
+    try:
+        return step_function(*args, **kwargs)
+    except Exception as e:
+        logging.error(f"Error in {step_function.__name__}: {e}")
+        return None
+
 def main():
     """Main execution function"""
     # Create required directories first
@@ -893,42 +901,48 @@ def main():
     
     # Load or generate data
     print("\n=== Loading Data ===")
-    data = safe_load_or_generate_data(config, args.input_file)
+    data = run_pipeline_step(safe_load_or_generate_data, config, args.input_file)
+    if data is None:
+        return
     print(f"Data loaded: {data.shape} - Memory usage: {data.memory_usage().sum() / 1024**2:.2f} MB")
-    
+
     # EDA usage (before preprocessing)
-    try:
-        print("\n=== Exploratory Data Analysis (EDA) ===")
-        eda = ExploratoryAnalysis(data)
-        eda.basic_summary()
-        eda.plot_distributions()
-    except Exception as e:
-        logging.warning(f"EDA failed or not available: {e}")
-    
+    print("\n=== Exploratory Data Analysis (EDA) ===")
+    run_pipeline_step(ExploratoryAnalysis(data).basic_summary)
+    run_pipeline_step(ExploratoryAnalysis(data).plot_distributions)
+
     # Preprocessing
     print("\n=== Preprocessing Data ===")
-    data = safe_run_preprocessing(data, config)
+    data = run_pipeline_step(safe_run_preprocessing, data, config)
+    if data is None:
+        return
     print(f"After preprocessing: {data.shape}")
-    
+
     # Feature engineering
     print("\n=== Feature Engineering ===")
-    data = safe_run_feature_engineering(data, config)
+    data = run_pipeline_step(safe_run_feature_engineering, data, config)
+    if data is None:
+        return
     print(f"After feature engineering: {data.shape}")
-    
+
     # Feature selection
     print("\n=== Feature Selection ===")
-    data = safe_run_feature_selection(data, config, args.feature_selection)
+    data = run_pipeline_step(safe_run_feature_selection, data, config, args.feature_selection)
+    if data is None:
+        return
     print(f"After feature selection: {data.shape}")
-    
+
     # Model pipeline
     print(f"\n=== Training Model: {args.model} ===")
-    results = safe_run_model_pipeline(data, config, args.model, args.tune_method)
-    
+    results = run_pipeline_step(safe_run_model_pipeline, data, config, args.model, args.tune_method)
+    if results is None:
+        return
+
     # Save results
     print("\n=== Saving Results ===")
-    safe_save_results(results, config, args.model, args.feature_selection, args.tune_method)
+    run_pipeline_step(safe_save_results, results, config, args.model, args.feature_selection, args.tune_method)
     print("\n=== Process Complete ===")
-    
+
     # Print a summary of the results
     if results:
         print("\n=== Results Summary ===")

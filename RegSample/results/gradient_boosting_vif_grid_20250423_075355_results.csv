@@ -1,0 +1,2 @@
+model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_criterion,param_learning_rate,param_loss,param_max_depth,param_max_features,param_min_samples_leaf,param_min_samples_split,param_n_estimators,param_random_state,param_subsample
+gradient_boosting,0.8470647184197161,0.8279169916200304,0.1535357293824168,0.16935080970498662,0.2843208486395264,0.2975800817300642,0.8470648340702496,0.8279191626828695,friedman_mse,0.1,squared_error,3,auto,1,2,100,42,0.8

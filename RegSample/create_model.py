@@ -28,6 +28,10 @@ import seaborn as sns
 import joblib
 import logging
 
+def _filter_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Filter out problematic parameters from the parameter dictionary."""
+    return {k: v for k, v in params.items() if not k.startswith('mode.') and k != 'use_inf_as_null'}
+
 class ModelBuilder:
     """
     A comprehensive class for building and tuning various regression models
@@ -190,41 +194,26 @@ class ModelBuilder:
         Returns:
             Any: Created model instance
         """
-        params = custom_params if custom_params is not None else {}
-        
-        # Filter out problematic parameters
-        params = {k: v for k, v in params.items() if not k.startswith('mode.')}
-        if 'use_inf_as_null' in params:
-            del params['use_inf_as_null']
-        
-        if model_type == 'linear':
-            return LinearRegression(**params)
-        elif model_type == 'logistic':
-            return LogisticRegression(**params)
-        elif model_type == 'lasso':
-            return Lasso(**params)
-        elif model_type == 'ridge':
-            return Ridge(**params)
-        elif model_type == 'elastic_net':
-            return ElasticNet(**params)
-        elif model_type == 'random_forest':
-            return RandomForestRegressor(**params)
-        elif model_type == 'svr':
-            return SVR(**params)
-        elif model_type == 'knn':
-            return KNeighborsRegressor(**params)
-        elif model_type == 'adaboost':
-            return AdaBoostRegressor(**params)
-        elif model_type == 'bagging':
-            return BaggingRegressor(**params)
-        elif model_type == 'gradient_boosting':
-            return GradientBoostingRegressor(**params)
-        elif model_type == 'xgboost':
-            return self.create_xgboost_model(params)
-        else:
+        params = _filter_params(custom_params or {})
+        model_mapping = {
+            'linear': LinearRegression,
+            'logistic': LogisticRegression,
+            'lasso': Lasso,
+            'ridge': Ridge,
+            'elastic_net': ElasticNet,
+            'random_forest': RandomForestRegressor,
+            'svr': SVR,
+            'knn': KNeighborsRegressor,
+            'adaboost': AdaBoostRegressor,
+            'bagging': BaggingRegressor,
+            'gradient_boosting': GradientBoostingRegressor,
+            'xgboost': self.create_xgboost_model
+        }
+        if model_type not in model_mapping:
             raise ValueError(f"Unknown model type: {model_type}")
+        return model_mapping[model_type](**params) if callable(model_mapping[model_type]) else model_mapping[model_type](params)
     
-    def create_xgboost_model(self, params=None):
+    def create_xgboost_model(self, **params):
         """
         Create an XGBoost regression model with specified parameters.
         
@@ -636,19 +625,10 @@ class ModelBuilder:
         Returns:
             Any: Initialized model instance
         """
-        if params is None:
-            params = {}
-            
-        # Filter out problematic parameters
-        params = {k: v for k, v in params.items() if not k.startswith('mode.')}
-        if 'use_inf_as_null' in params:
-            del params['use_inf_as_null']
-        
-        # For XGBoost, explicitly set tree_method and disable categorical support
+        params = _filter_params(params or {})
         if model_type == 'xgboost':
-            params['tree_method'] = params.get('tree_method', 'hist')
-            params['enable_categorical'] = False
-            
+            params.setdefault('tree_method', 'hist')
+            params.setdefault('enable_categorical', False)
         return self.create_model(model_type, params)
 
     def _calculate_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:

@@ -13,6 +13,14 @@ from statsmodels.stats.stattools import durbin_watson
 import statsmodels.api as sm
 import os
 
+def _save_or_show_plot(fig, save_path=None):
+    """Helper function to save or show a plot."""
+    if save_path:
+        fig.savefig(save_path)
+        plt.close(fig)
+    else:
+        plt.show()
+
 class ModelEvaluator:
     """
     A comprehensive class for model evaluation and statistical analysis:
@@ -279,12 +287,7 @@ class ModelEvaluator:
         axes[1, 1].axhline(y=0, color='r', linestyle='-')
         
         plt.tight_layout()
-        
-        if save_path:
-            plt.savefig(save_path)
-            plt.close(fig)
-        else:
-            plt.show()
+        _save_or_show_plot(fig, save_path)
     
     def get_complete_evaluation(self, X: np.ndarray = None) -> Dict:
         """

@@ -1,0 +1,2 @@
+model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_alpha,param_fit_intercept,param_max_iter,param_random_state,param_selection,param_tol
+lasso,0.6362341581661846,0.5729815909013838,0.36519408226013184,0.42023855447769165,0.44343850016593933,0.4472317397594452,0.6362341642379761,0.5730229020118713,0.1,True,1000,42,cyclic,0.0001

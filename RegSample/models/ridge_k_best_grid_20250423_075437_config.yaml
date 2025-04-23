@@ -1,0 +1,21 @@
+best_params:
+  alpha: 0.1
+  fit_intercept: true
+  max_iter: 1000
+  random_state: 42
+  solver: auto
+  tol: 0.001
+feature_selection: k_best
+model: ridge
+test_metrics:
+  explained_variance: 0.6217163801193237
+  mae: 0.3547186553478241
+  mse: 0.3723020851612091
+  r2: 0.6216914098711563
+timestamp: '20250423_075437'
+training_metrics:
+  explained_variance: 0.7058098316192627
+  mae: 0.3548574149608612
+  mse: 0.2953452169895172
+  r2: 0.7058098264995509
+tuning_method: grid

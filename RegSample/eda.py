@@ -452,17 +452,23 @@ class ExploratoryAnalysis:
 
     def plot_distributions(self):
         """Plot distributions of numerical features and target variable"""
-        numeric_cols = self.data.select_dtypes(include=['float64', 'int64']).columns
-        n_cols = len(numeric_cols)
-        n_rows = (n_cols + 2) // 3  # 3 plots per row
-        
-        plt.figure(figsize=(15, 5 * n_rows))
-        for idx, col in enumerate(numeric_cols, 1):
-            plt.subplot(n_rows, 3, idx)
-            sns.histplot(data=self.data, x=col, kde=True)
-            plt.title(f'Distribution of {col}')
-            plt.xticks(rotation=45)
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.plots_dir, 'all_distributions.png'))
-        plt.close()
+        try:
+            numeric_cols = self.data.select_dtypes(include=['float64', 'int64']).columns
+            n_cols = len(numeric_cols)
+            n_rows = (n_cols + 2) // 3  # 3 plots per row
+            
+            plt.figure(figsize=(15, 5 * n_rows))
+            for idx, col in enumerate(numeric_cols, 1):
+                plt.subplot(n_rows, 3, idx)
+                sns.histplot(data=self.data, x=col, kde=True)
+                plt.title(f'Distribution of {col}')
+                plt.xticks(rotation=45)
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(self.plots_dir, 'all_distributions.png'))
+            plt.close()
+        except Exception as e:
+            # Handle the error gracefully without interrupting the pipeline
+            print(f"Warning: Could not plot distributions - {str(e)}")
+            import logging
+            logging.error(f"Error in plot_distributions: {str(e)}")
