@@ -166,55 +166,53 @@ def run_feature_engineering(data: pd.DataFrame, config: Dict[str, Any]) -> pd.Da
     
     return data
 
-def run_feature_selection(data: pd.DataFrame, config: Dict[str, Any], 
-                        method_override: str = None) -> pd.DataFrame:
-    """Apply feature selection based on configuration"""
-    if not config['feature_selection']['enable']:
-        return data
-        
+def run_feature_selection(data, config, method_override=None):
+    """Run feature selection step in the pipeline"""
     selector = FeatureSelector(data)
-    target = config['data']['target_column']
+    target = config.get('target_column', 'target')
     
-    # Prioritize RFE for feature selection
-    rfe_method = next((m for m in config['feature_selection']['methods'] if m['name'] == 'rfe'), None)
-    if rfe_method and (not method_override or method_override == 'rfe'):
-        data = selector.recursive_feature_elimination(
-            target=target,
-            **rfe_method['params']
-        )
-        return data
-
-    # Fallback to other methods if RFE is not prioritized
-    methods = [m for m in config['feature_selection']['methods'] 
-              if not method_override or m['name'] == method_override]
+    # Get method, either from CLI args or config
+    method = method_override or config.get('feature_selection', {}).get('method', 'none')
     
-    selected_features = set()
-    for method in methods:
-        if method['name'] == 'k_best':
-            result = selector.select_k_best(
-                target=target,
-                **method['params']
-            )
-        elif method['name'] == 'lasso':
-            result = selector.lasso_selection(
-                target=target,
-                **method['params']
-            )
-        elif method['name'] == 'random_forest':
-            result = selector.random_forest_selection(
-                target=target,
-                **method['params']
-            )
-        elif method['name'] == 'vif':
-            result = selector.multicollinearity_analysis(
-                target=target,
-                **method['params']
-            )
-        
-        selected_features.update(selector.feature_scores[method['name']]['selected_features'])
+    # Configuration for feature selection
+    fs_config = config.get('feature_selection', {})
     
-    # Return data with selected features and target
-    return data[list(selected_features) + [target]]
+    # Number of features to select, using a default if not specified
+    n_features = fs_config.get('n_features', 10)
+    
+    print(f"Using feature selection method: {method}")
+    
+    try:
+        if method.lower() == 'k_best' or method.lower() == 'k-best':
+            data = selector.select_k_best(target, k=n_features)
+        elif method.lower() == 'lasso':
+            # Get alpha from config or use default
+            alpha = fs_config.get('alpha', 0.1)
+            data = selector.lasso_selection(target, alpha=alpha)
+        elif method.lower() == 'rfe':
+            # Get step and estimator parameters from config
+            step = fs_config.get('step', 1)
+            data = selector.recursive_feature_elimination(target, n_features_to_select=n_features, step=step)
+        elif method.lower() == 'random_forest':
+            # Get random forest specific parameters
+            rf_params = {k: v for k, v in fs_config.items() 
+                      if k not in ['method', 'n_features']}
+            data = selector.random_forest_selection(target, n_features=n_features, **rf_params)
+        elif method.lower() == 'vif':
+            # Get threshold from config or use default
+            threshold = fs_config.get('threshold', 5.0)
+            data = selector.multicollinearity_analysis(target, threshold=threshold)
+        elif method.lower() == 'knn':
+            # Get neighbors from config or use default
+            n_neighbors = fs_config.get('n_neighbors', 5)
+            data = selector.knn_feature_selection(target, n_features=n_features, n_neighbors=n_neighbors)
+        else:
+            logging.warning(f"Unknown feature selection method: {method}, skipping")
+    except Exception as e:
+        logging.warning(f"Feature selection skipped or failed: {str(e)}")
+    
+    print(f"After feature selection: {data.shape}")
+    return data
 
 def run_model_pipeline(data: pd.DataFrame, config: Dict[str, Any], 
                       model_name: str = None, tune_method: str = None) -> Dict[str, Any]:
@@ -849,6 +847,16 @@ def run_pipeline_step(step_function, *args, **kwargs):
     except Exception as e:
         logging.error(f"Error in {step_function.__name__}: {e}")
         return None
+
+def run_eda(data: pd.DataFrame, config: dict) -> None:
+    """Run exploratory data analysis step"""
+    analyzer = ExploratoryAnalysis(data)
+    analyzer.basic_summary()
+    try:
+        analyzer.plot_distributions()
+    except Exception as e:
+        logging.error(f"Error in plot_distributions: {str(e)}")
+    return data
 
 def main():
     """Main execution function"""

@@ -1,0 +1,25 @@
+best_params:
+  colsample_bytree: 0.8
+  enable_categorical: false
+  learning_rate: 0.1
+  max_depth: 5
+  min_child_weight: 1
+  n_estimators: 100
+  nthread: -1
+  objective: reg:squarederror
+  subsample: 0.8
+  tree_method: hist
+feature_selection: random_forest
+model: xgboost
+test_metrics:
+  explained_variance: 0.9634901285171509
+  mae: 0.1283942461013794
+  mse: 0.035932961851358414
+  r2: 0.9634873169895131
+timestamp: '20250423_081401'
+training_metrics:
+  explained_variance: 0.9782889485359192
+  mae: 0.10696963220834732
+  mse: 0.021796295419335365
+  r2: 0.9782889457146009
+tuning_method: random

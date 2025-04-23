@@ -1,0 +1,2 @@
+model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_weights,param_p,param_n_neighbors,param_n_jobs,param_metric,param_leaf_size,param_algorithm
+knn,0.9507963545042729,0.9184552210121728,0.049396827816963196,0.08025006949901581,0.15080618858337402,0.18659570813179016,0.9510905742645264,0.9187455773353577,uniform,2,5,-1,minkowski,30,auto

@@ -30,7 +30,12 @@ import logging
 
 def _filter_params(params: Dict[str, Any]) -> Dict[str, Any]:
     """Filter out problematic parameters from the parameter dictionary."""
-    return {k: v for k, v in params.items() if not k.startswith('mode.') and k != 'use_inf_as_null'}
+    filtered_params = {}
+    for k, v in params.items():
+        # Skip mode configuration parameters and any None values
+        if not k.startswith('mode.') and k != 'use_inf_as_null' and v is not None:
+            filtered_params[k] = v
+    return filtered_params
 
 class ModelBuilder:
     """

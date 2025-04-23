@@ -453,10 +453,15 @@ class ExploratoryAnalysis:
     def plot_distributions(self):
         """Plot distributions of numerical features and target variable"""
         try:
+            # Create plots directory if it doesn't exist
+            os.makedirs(self.plots_dir, exist_ok=True)
+            
+            # Get numeric columns
             numeric_cols = self.data.select_dtypes(include=['float64', 'int64']).columns
             n_cols = len(numeric_cols)
             n_rows = (n_cols + 2) // 3  # 3 plots per row
             
+            # Distribution plots
             plt.figure(figsize=(15, 5 * n_rows))
             for idx, col in enumerate(numeric_cols, 1):
                 plt.subplot(n_rows, 3, idx)
@@ -465,10 +470,47 @@ class ExploratoryAnalysis:
                 plt.xticks(rotation=45)
             
             plt.tight_layout()
-            plt.savefig(os.path.join(self.plots_dir, 'all_distributions.png'))
+            plt.savefig(os.path.join(self.plots_dir, 'feature_distributions.png'))
             plt.close()
+            
+            # Correlation heatmap
+            plt.figure(figsize=(12, 8))
+            sns.heatmap(self.data[numeric_cols].corr(), annot=True, cmap='coolwarm', center=0)
+            plt.title('Feature Correlations')
+            plt.tight_layout()
+            plt.savefig(os.path.join(self.plots_dir, 'correlation_heatmap.png'))
+            plt.close()
+            
+            # Boxplots for outlier detection
+            plt.figure(figsize=(15, 5))
+            self.data[numeric_cols].boxplot()
+            plt.title('Feature Distributions (Box Plots)')
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            plt.savefig(os.path.join(self.plots_dir, 'feature_boxplots.png'))
+            plt.close()
+            
+            # Scatter plots against target
+            target = self.data.columns[-1]  # Assuming target is the last column
+            n_features = len(numeric_cols) - 1  # Exclude target
+            n_rows = (n_features + 2) // 3
+            
+            plt.figure(figsize=(15, 5 * n_rows))
+            plot_idx = 1
+            for col in numeric_cols:
+                if col != target:
+                    plt.subplot(n_rows, 3, plot_idx)
+                    plt.scatter(self.data[col], self.data[target], alpha=0.5)
+                    plt.xlabel(col)
+                    plt.ylabel(target)
+                    plt.title(f'{col} vs {target}')
+                    plot_idx += 1
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(self.plots_dir, 'feature_target_relationships.png'))
+            plt.close()
+            
         except Exception as e:
-            # Handle the error gracefully without interrupting the pipeline
-            print(f"Warning: Could not plot distributions - {str(e)}")
+            print(f"Warning: Could not generate one or more plots - {str(e)}")
             import logging
             logging.error(f"Error in plot_distributions: {str(e)}")

@@ -214,8 +214,8 @@ evaluation:
     cross_validation: True
   plots:
     residuals: True
-    learning_curves: False  # Save time by disabling some plots
-    validation_curves: False  # Save time by disabling some plots
+    learning_curves: True
+    validation_curves: True  # Save time by disabling some plots
     feature_importance: True
     prediction_error: True
 

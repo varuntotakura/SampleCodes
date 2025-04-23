@@ -137,7 +137,7 @@ class FeatureSelector:
     
     def recursive_feature_elimination(self,
                                    target: str,
-                                   n_features_to_select: int = 10,
+                                   n_features_to_select: int = 5,  # Reduced from 10
                                    step: int = 1,
                                    estimator=None) -> pd.DataFrame:
         """
@@ -152,72 +152,120 @@ class FeatureSelector:
         Returns:
             pd.DataFrame: Dataset with selected features
         """
-        X = self.data.drop(columns=[target])
-        y = self.data[target]
+        X, y = self._prepare_numeric_data(target)
         
         if estimator is None:
-            estimator = RandomForestRegressor(n_estimators=100, random_state=42)
+            # Use a faster estimator with limited depth and fewer estimators
+            estimator = RandomForestRegressor(n_estimators=50, max_depth=5, random_state=42, n_jobs=-1)
         
         # Initialize RFE
-        rfe = RFE(estimator=estimator, 
-                  n_features_to_select=n_features_to_select,
-                  step=step)
+        try:
+            # Try with RandomForestRegressor (faster) first
+            rfe = RFE(estimator=estimator, 
+                    n_features_to_select=n_features_to_select,
+                    step=step)
+            
+            # Fit RFE with a timeout
+            import threading
+            import time
+            
+            class TimeoutError(Exception):
+                pass
+            
+            def timeout_handler():
+                raise TimeoutError("RFE took too long to complete")
+            
+            # Set a timeout for RFE (60 seconds)
+            timer = threading.Timer(60, timeout_handler)
+            timer.start()
+            
+            try:
+                rfe.fit(X, y)
+                timer.cancel()
+            except (TimeoutError, KeyboardInterrupt):
+                timer.cancel()
+                # If timeout occurs, fall back to SelectKBest which is faster
+                print("RFE timed out, falling back to SelectKBest")
+                selector = SelectKBest(f_regression, k=n_features_to_select)
+                selector.fit(X, y)
+                support = np.zeros(X.shape[1], dtype=bool)
+                support[np.argsort(selector.scores_)[-n_features_to_select:]] = True
+                ranking = np.zeros(X.shape[1], dtype=int)
+                ranking[np.argsort(selector.scores_)] = np.arange(X.shape[1]) + 1
+                
+                # Create a simple object with the same interface as RFE
+                class SimpleSelector:
+                    def __init__(self, support, ranking):
+                        self.support_ = support
+                        self.ranking_ = ranking
+                
+                rfe = SimpleSelector(support, ranking)
+            
+            # Get selected feature names
+            selected_features = X.columns[rfe.support_].tolist()
+            
+            # Store feature rankings
+            self.feature_scores['rfe'] = {
+                'rankings': dict(zip(X.columns, rfe.ranking_)),
+                'selected_features': selected_features
+            }
+            
+            # Return data with selected features and target
+            return self.data[selected_features + [target]]
         
-        # Fit RFE
-        rfe.fit(X, y)
-        
-        # Get selected feature names
-        selected_features = X.columns[rfe.support_].tolist()
-        
-        # Store feature rankings
-        self.feature_scores['rfe'] = {
-            'rankings': dict(zip(X.columns, rfe.ranking_)),
-            'selected_features': selected_features
-        }
-        
-        # Return data with selected features and target
-        return self.data[selected_features + [target]]
+        except Exception as e:
+            print(f"Error in RFE: {str(e)}, falling back to SelectKBest")
+            import logging
+            logging.error(f"Error in RFE: {str(e)}")
+            
+            # Fall back to SelectKBest which is more robust
+            return self.select_k_best(target, k=n_features_to_select)
     
-    def random_forest_selection(self,
-                              target: str,
-                              n_features: int = 10,
-                              **kwargs) -> pd.DataFrame:
+    def random_forest_selection(self, target: str, n_features: int = None, **kwargs) -> pd.DataFrame:
         """
-        Select features using Random Forest importance.
+        Select features using Random Forest feature importance.
         
         Args:
-            target (str): Target variable name
+            target (str): Target variable column name
             n_features (int): Number of features to select
-            **kwargs: Additional parameters for RandomForestRegressor
+            **kwargs: Additional parameters to pass to RandomForestRegressor
             
         Returns:
             pd.DataFrame: Dataset with selected features
         """
-        X, y = self._prepare_numeric_data(target)
+        # Get feature matrix and target
+        X = self.data.drop(columns=[target])
+        y = self.data[target]
         
-        # Train Random Forest with default parameters
-        rf_params = {'n_estimators': 100, 'random_state': 42}
+        # Set number of features if not specified
+        if n_features is None:
+            n_features = X.shape[1] // 2  # Default to half of features
         
-        # Update with any passed parameters
-        rf_params.update(kwargs)
+        # Get default parameters for RandomForestRegressor
+        rf_params = {
+            'n_estimators': kwargs.get('n_estimators', 100),
+            'random_state': kwargs.get('random_state', 42)
+        }
         
-        # Train Random Forest
+        # Remove any config parameters that aren't valid for RandomForestRegressor
+        rf_params = {k: v for k, v in rf_params.items() 
+                    if k not in ['enable', 'threshold', 'method']}
+        
+        # Create and fit random forest
         rf = RandomForestRegressor(**rf_params)
         rf.fit(X, y)
         
         # Get feature importance scores
-        importance_scores = rf.feature_importances_
-        feature_importance = pd.Series(importance_scores, index=X.columns)
+        importance = pd.DataFrame({
+            'feature': X.columns,
+            'importance': rf.feature_importances_
+        })
+        importance = importance.sort_values('importance', ascending=False)
         
-        # Select top features
-        selected_features = feature_importance.nlargest(n_features).index.tolist()
+        # Select top n_features
+        selected_features = importance['feature'].head(n_features).tolist()
         
-        # Store importance scores
-        self.feature_scores['random_forest'] = {
-            'importance_scores': dict(zip(X.columns, importance_scores)),
-            'selected_features': selected_features
-        }
-        
+        # Return dataset with selected features and target
         return self.data[selected_features + [target]]
     
     def multicollinearity_analysis(self,
