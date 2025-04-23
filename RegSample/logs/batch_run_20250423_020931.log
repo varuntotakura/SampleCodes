@@ -1,0 +1,84 @@
+2025-04-23 02:09:31,189 - INFO - Executing command 1/14: python main.py --config config.yaml --model xgboost --feature-selection k-best --tune-method random
+2025-04-23 02:09:31,255 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:33,525 - ERROR - Model pipeline failed: Experimental support for categorical data is not implemented for current tree method yet.
+2025-04-23 02:09:33,525 - INFO - Results saved to results\xgboost_k-best_random_20250423_020933_results.csv
+2025-04-23 02:09:33,525 - INFO - Command 1 completed successfully
+2025-04-23 02:09:33,525 - INFO - Executing command 2/14: python main.py --config config.yaml --model adaboost --feature-selection k-best --tune-method grid
+2025-04-23 02:09:33,608 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:34,608 - ERROR - Model pipeline failed: at least one array or dtype is required
+2025-04-23 02:09:34,608 - INFO - Results saved to results\adaboost_k-best_grid_20250423_020934_results.csv
+2025-04-23 02:09:34,608 - INFO - Command 2 completed successfully
+2025-04-23 02:09:34,608 - INFO - Executing command 3/14: python main.py --config config.yaml --model linear --feature-selection k_best --tune-method grid
+2025-04-23 02:09:34,671 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:34,673 - WARNING - Feature selection skipped or failed: select_k_best() got an unexpected keyword argument 'score_func'
+2025-04-23 02:09:35,859 - INFO - Results saved to results\linear_k_best_grid_20250423_020935_results.csv
+2025-04-23 02:09:35,859 - INFO - Model saved to models\linear_k_best_grid_20250423_020935_model.pkl
+2025-04-23 02:09:35,870 - INFO - Best configuration saved to models\linear_k_best_grid_20250423_020935_config.yaml
+2025-04-23 02:09:35,870 - INFO - Command 3 completed successfully
+2025-04-23 02:09:35,870 - INFO - Executing command 4/14: python main.py --config config.yaml --model linear --feature-selection lasso --tune-method grid
+2025-04-23 02:09:35,926 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:35,926 - WARNING - Feature selection skipped or failed: lasso_selection() got an unexpected keyword argument 'alpha'
+2025-04-23 02:09:37,013 - INFO - Results saved to results\linear_lasso_grid_20250423_020937_results.csv
+2025-04-23 02:09:37,020 - INFO - Model saved to models\linear_lasso_grid_20250423_020937_model.pkl
+2025-04-23 02:09:37,024 - INFO - Best configuration saved to models\linear_lasso_grid_20250423_020937_config.yaml
+2025-04-23 02:09:37,024 - INFO - Command 4 completed successfully
+2025-04-23 02:09:37,024 - INFO - Executing command 5/14: python main.py --config config.yaml --model linear --feature-selection random_forest --tune-method grid
+2025-04-23 02:09:37,094 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:37,094 - WARNING - Feature selection skipped or failed: random_forest_selection() got an unexpected keyword argument 'n_estimators'
+2025-04-23 02:09:38,300 - INFO - Results saved to results\linear_random_forest_grid_20250423_020938_results.csv
+2025-04-23 02:09:38,300 - INFO - Model saved to models\linear_random_forest_grid_20250423_020938_model.pkl
+2025-04-23 02:09:38,308 - INFO - Best configuration saved to models\linear_random_forest_grid_20250423_020938_config.yaml
+2025-04-23 02:09:38,308 - INFO - Command 5 completed successfully
+2025-04-23 02:09:38,308 - INFO - Executing command 6/14: python main.py --config config.yaml --model linear --feature-selection vif --tune-method grid
+2025-04-23 02:09:38,388 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:39,669 - INFO - Results saved to results\linear_vif_grid_20250423_020939_results.csv
+2025-04-23 02:09:39,681 - INFO - Model saved to models\linear_vif_grid_20250423_020939_model.pkl
+2025-04-23 02:09:39,684 - INFO - Best configuration saved to models\linear_vif_grid_20250423_020939_config.yaml
+2025-04-23 02:09:39,684 - INFO - Command 6 completed successfully
+2025-04-23 02:09:39,684 - INFO - Executing command 7/14: python main.py --config config.yaml --model random_forest --feature-selection vif --tune-method grid
+2025-04-23 02:09:39,745 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:42,907 - INFO - Results saved to results\random_forest_vif_grid_20250423_020942_results.csv
+2025-04-23 02:09:42,942 - INFO - Model saved to models\random_forest_vif_grid_20250423_020942_model.pkl
+2025-04-23 02:09:42,942 - INFO - Best configuration saved to models\random_forest_vif_grid_20250423_020942_config.yaml
+2025-04-23 02:09:42,942 - INFO - Command 7 completed successfully
+2025-04-23 02:09:42,942 - INFO - Executing command 8/14: python main.py --config config.yaml --model gradient_boosting --feature-selection vif --tune-method grid
+2025-04-23 02:09:43,025 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:49,142 - INFO - Results saved to results\gradient_boosting_vif_grid_20250423_020949_results.csv
+2025-04-23 02:09:49,164 - INFO - Model saved to models\gradient_boosting_vif_grid_20250423_020949_model.pkl
+2025-04-23 02:09:49,164 - INFO - Best configuration saved to models\gradient_boosting_vif_grid_20250423_020949_config.yaml
+2025-04-23 02:09:49,164 - INFO - Command 8 completed successfully
+2025-04-23 02:09:49,164 - INFO - Executing command 9/14: python main.py --config config.yaml --model lasso --feature-selection knn --tune-method grid
+2025-04-23 02:09:49,230 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:49,303 - ERROR - Model pipeline failed: at least one array or dtype is required
+2025-04-23 02:09:49,303 - INFO - Results saved to results\lasso_knn_grid_20250423_020949_results.csv
+2025-04-23 02:09:49,303 - INFO - Command 9 completed successfully
+2025-04-23 02:09:49,303 - INFO - Executing command 10/14: python main.py --config config.yaml --model ridge --feature-selection knn --tune-method grid
+2025-04-23 02:09:49,360 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:49,409 - ERROR - Model pipeline failed: at least one array or dtype is required
+2025-04-23 02:09:49,409 - INFO - Results saved to results\ridge_knn_grid_20250423_020949_results.csv
+2025-04-23 02:09:49,409 - INFO - Command 10 completed successfully
+2025-04-23 02:09:49,409 - INFO - Executing command 11/14: python main.py --config config.yaml --model elastic_net --feature-selection knn --tune-method grid
+2025-04-23 02:09:49,489 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:49,508 - ERROR - Model pipeline failed: at least one array or dtype is required
+2025-04-23 02:09:49,509 - INFO - Results saved to results\elastic_net_knn_grid_20250423_020949_results.csv
+2025-04-23 02:09:49,509 - INFO - Command 11 completed successfully
+2025-04-23 02:09:49,509 - INFO - Executing command 12/14: python main.py --config config.yaml --model svr --feature-selection knn --tune-method grid
+2025-04-23 02:09:49,559 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:49,609 - ERROR - Model pipeline failed: at least one array or dtype is required
+2025-04-23 02:09:49,609 - INFO - Results saved to results\svr_knn_grid_20250423_020949_results.csv
+2025-04-23 02:09:49,609 - INFO - Command 12 completed successfully
+2025-04-23 02:09:49,609 - INFO - Executing command 13/14: python main.py --config config.yaml --model knn --feature-selection rfe --tune-method random
+2025-04-23 02:09:49,693 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:49,693 - WARNING - Feature selection skipped or failed: recursive_feature_elimination() got an unexpected keyword argument 'step'
+2025-04-23 02:09:50,841 - INFO - Results saved to results\knn_rfe_random_20250423_020950_results.csv
+2025-04-23 02:09:50,842 - INFO - Model saved to models\knn_rfe_random_20250423_020950_model.pkl
+2025-04-23 02:09:50,842 - INFO - Best configuration saved to models\knn_rfe_random_20250423_020950_config.yaml
+2025-04-23 02:09:50,842 - INFO - Command 13 completed successfully
+2025-04-23 02:09:50,842 - INFO - Executing command 14/14: python main.py --config config.yaml --model knn --feature-selection rfe --tune-method grid
+2025-04-23 02:09:50,910 - WARNING - Feature engineering skipped or failed: The truth value of a Index is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-04-23 02:09:50,910 - WARNING - Feature selection skipped or failed: recursive_feature_elimination() got an unexpected keyword argument 'step'
+2025-04-23 02:09:52,205 - INFO - Results saved to results\knn_rfe_grid_20250423_020952_results.csv
+2025-04-23 02:09:52,223 - INFO - Model saved to models\knn_rfe_grid_20250423_020952_model.pkl
+2025-04-23 02:09:52,223 - INFO - Best configuration saved to models\knn_rfe_grid_20250423_020952_config.yaml
+2025-04-23 02:09:52,223 - INFO - Command 14 completed successfully
+2025-04-23 02:09:52,387 - INFO - Results consolidated successfully

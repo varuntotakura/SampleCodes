@@ -18,8 +18,13 @@ class DataPreprocessor:
             data (pd.DataFrame): Input dataset for preprocessing
         """
         self.data = data.copy()
+        self._original_dtypes = data.dtypes
+        self.preprocessing_steps = []
+        self.encoders = {}
         self.imputation_stats = {}  # Store imputation statistics for reference
         self.scaling_stats = {}
+        self._scalers = {}
+        self._handle_data_types()
         # Set default value for use_inf_as_null if not in config
         self.use_inf_as_null = False
         
@@ -28,6 +33,20 @@ class DataPreprocessor:
         if self.use_inf_as_null:
             self.data = self.data.replace([np.inf, -np.inf], np.nan)
         return self.data
+
+    def _handle_data_types(self):
+        """Ensure proper data types for all columns"""
+        # Identify numeric columns
+        numeric_cols = self.data.select_dtypes(include=['int64', 'float64']).columns
+        
+        # Convert any string columns that should be numeric
+        for col in self.data.columns:
+            if col not in numeric_cols:
+                try:
+                    self.data[col] = pd.to_numeric(self.data[col])
+                except (ValueError, TypeError):
+                    # Keep as non-numeric if conversion fails
+                    continue
 
     def get_missing_info(self) -> pd.DataFrame:
         """
@@ -338,6 +357,85 @@ class DataPreprocessor:
         
         return self.data
     
+    def handle_outliers(self, columns: List[str] = None, method: str = 'iqr',
+                       threshold: float = 1.5) -> pd.DataFrame:
+        """
+        Handle outliers in specified columns
+        
+        Args:
+            columns (List[str]): Columns to process
+            method (str): 'iqr' or 'zscore'
+            threshold (float): Threshold for outlier detection
+        
+        Returns:
+            pd.DataFrame: Data with handled outliers
+        """
+        if columns is None:
+            columns = self.data.select_dtypes(include=['int64', 'float64']).columns
+        
+        for col in columns:
+            if method == 'iqr':
+                Q1 = self.data[col].quantile(0.25)
+                Q3 = self.data[col].quantile(0.75)
+                IQR = Q3 - Q1
+                lower_bound = Q1 - threshold * IQR
+                upper_bound = Q3 + threshold * IQR
+                
+                # Cap outliers at bounds
+                self.data[col] = self.data[col].clip(lower_bound, upper_bound)
+            
+            elif method == 'zscore':
+                mean = self.data[col].mean()
+                std = self.data[col].std()
+                z_scores = (self.data[col] - mean) / std
+                
+                # Cap values beyond threshold standard deviations
+                self.data[col] = self.data[col].mask(
+                    abs(z_scores) > threshold,
+                    mean + (threshold * std * np.sign(z_scores))
+                )
+        
+        return self.data
+    
+    def encode_categorical(self, columns: List[str] = None, method: str = 'onehot',
+                         drop_first: bool = True) -> pd.DataFrame:
+        """
+        Encode categorical variables
+        
+        Args:
+            columns (List[str]): Columns to encode
+            method (str): 'onehot' or 'label'
+            drop_first (bool): Whether to drop first category in one-hot encoding
+        
+        Returns:
+            pd.DataFrame: Data with encoded categories
+        """
+        if columns is None:
+            columns = self.data.select_dtypes(include=['object', 'category']).columns
+        
+        for col in columns:
+            if method == 'onehot':
+                # One-hot encoding
+                dummies = pd.get_dummies(self.data[col], prefix=col, drop_first=drop_first)
+                self.data = pd.concat([self.data.drop(columns=[col]), dummies], axis=1)
+            elif method == 'label':
+                # Label encoding
+                self.data[col] = pd.Categorical(self.data[col]).codes
+        
+        return self.data
+    
+    def get_feature_names(self) -> List[str]:
+        """Get list of feature names after preprocessing"""
+        return self.data.columns.tolist()
+    
+    def get_preprocessed_data(self) -> pd.DataFrame:
+        """Get the preprocessed data"""
+        return self.data.copy()
+    
+    def get_scalers(self) -> Dict[str, Any]:
+        """Get fitted scalers"""
+        return self._scalers.copy()
+    
     def get_scaling_summary(self) -> pd.DataFrame:
         """
         Get summary of all scaling operations performed.
@@ -351,3 +449,27 @@ class DataPreprocessor:
         summary = pd.DataFrame.from_dict(self.scaling_stats, orient='index')
         summary.index.name = 'column'
         return summary.reset_index()
+    
+    def _handle_categorical_columns(self):
+        """Encode categorical columns using LabelEncoder"""
+        categorical_columns = self.data.select_dtypes(include=['object', 'category']).columns
+        
+        if len(categorical_columns) > 0:
+            for col in categorical_columns:
+                # Convert column to numeric using LabelEncoder
+                from sklearn.preprocessing import LabelEncoder
+                encoder = LabelEncoder()
+                self.data[col] = encoder.fit_transform(self.data[col].astype(str))
+                self.encoders[col] = encoder
+            
+            self.preprocessing_steps.append('categorical_encoding')
+        
+        return self.data
+
+    def preprocess_data(self):
+        """Run all preprocessing steps"""
+        self._handle_infinities()
+        self.impute_missing_values()
+        self._handle_categorical_columns()  # Add categorical handling
+        self.standardize_data()
+        return self.data

@@ -51,39 +51,41 @@ class FeatureSelector:
         
         return X, y
     
-    def select_features(self, data: pd.DataFrame, target: str, k: int = 10) -> pd.DataFrame:
+    def select_k_best(self, target: str, k: int = 10, score_func=None) -> pd.DataFrame:
         """
-        Select features using SelectKBest with f_regression.
+        Select k best features based on scoring function.
         
         Args:
-            data (pd.DataFrame): Input data
             target (str): Target variable name
             k (int): Number of features to select
+            score_func: Scoring function (defaults to f_regression)
             
         Returns:
             pd.DataFrame: Dataset with selected features
         """
-        # Get numeric columns excluding target
-        numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
-        numeric_cols = numeric_cols[numeric_cols != target]
+        X, y = self._prepare_numeric_data(target)
         
-        if len(numeric_cols) == 0:
-            return data
+        if score_func is None:
+            score_func = f_regression
             
-        # Initialize selector with correct parameter
-        selector = SelectKBest(score_func=f_regression, k=k)
+        # Initialize selector
+        selector = SelectKBest(k=k)
         
         # Fit and transform
-        X = data[numeric_cols]
-        y = data[target]
         selected_features = selector.fit_transform(X, y)
         
         # Get selected feature names
         selected_mask = selector.get_support()
-        selected_names = numeric_cols[selected_mask].tolist()
+        selected_names = X.columns[selected_mask].tolist()
+        
+        # Store scores
+        self.feature_scores['k_best'] = {
+            'scores': dict(zip(X.columns, selector.scores_)),
+            'selected_features': selected_names
+        }
         
         # Return selected features and target
-        return data[selected_names + [target]]
+        return self.data[selected_names + [target]]
     
     def lasso_selection(self,
                        target: str,

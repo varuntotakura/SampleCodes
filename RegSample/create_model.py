@@ -26,6 +26,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
+import logging
 
 class ModelBuilder:
     """
@@ -242,8 +243,8 @@ class ModelBuilder:
             'min_child_weight': 1,
             'gamma': 0,
             'random_state': 42,
-            'enable_categorical': True,
-            'use_label_encoder': False
+            'tree_method': 'hist',  # Use histogram-based tree method
+            'enable_categorical': False  # Disable categorical feature support
         }
         
         if params:
@@ -432,58 +433,56 @@ class ModelBuilder:
             'all_scores': scores
         }
     
-    def train_evaluate_model(self,
-                           X_train: np.ndarray,
-                           X_test: np.ndarray,
-                           y_train: np.ndarray,
-                           y_test: np.ndarray,
-                           model_type: str,
-                           params: Dict = None) -> Dict:
+    def train_evaluate_model(self, X_train, X_test, y_train, y_test,
+                            model_type: str = 'xgboost',
+                            params: Dict[str, Any] = None) -> Dict[str, Dict[str, float]]:
         """
         Train and evaluate a model.
         
         Args:
-            X_train (np.ndarray): Training features
-            X_test (np.ndarray): Test features
-            y_train (np.ndarray): Training target
-            y_test (np.ndarray): Test target
+            X_train: Training features
+            X_test: Test features
+            y_train: Training target
+            y_test: Test target
             model_type (str): Type of model to train
-            params (Dict): Model parameters
+            params (Dict[str, Any]): Model parameters
             
         Returns:
-            Dict: Model evaluation results
+            Dict[str, Dict[str, float]]: Training and test results
         """
-        # Create and train model
-        model = self.create_model(model_type, params)
-        model.fit(X_train, y_train)
+        if params is None:
+            params = {}
+            
+        # Convert data to numpy arrays and ensure float32 type for XGBoost
+        X_train = np.asarray(X_train).astype(np.float32)
+        X_test = np.asarray(X_test).astype(np.float32)
+        y_train = np.asarray(y_train).astype(np.float32)
+        y_test = np.asarray(y_test).astype(np.float32)
         
+        # Initialize and train model
+        model = self._initialize_model(model_type, params)
+        
+        try:
+            model.fit(X_train, y_train)
+        except Exception as e:
+            logging.error(f"Error training model {model_type}: {str(e)}")
+            raise
+            
         # Make predictions
-        y_pred_train = model.predict(X_train)
-        y_pred_test = model.predict(X_test)
+        train_pred = model.predict(X_train)
+        test_pred = model.predict(X_test)
         
         # Calculate metrics
-        results = {
-            'train': {
-                'mse': mean_squared_error(y_train, y_pred_train),
-                'r2': r2_score(y_train, y_pred_train),
-                'mae': mean_absolute_error(y_train, y_pred_train),
-                'explained_variance': explained_variance_score(y_train, y_pred_train),
-                'predictions': y_pred_train
-            },
-            'test': {
-                'mse': mean_squared_error(y_test, y_pred_test),
-                'r2': r2_score(y_test, y_pred_test),
-                'mae': mean_absolute_error(y_test, y_pred_test),
-                'explained_variance': explained_variance_score(y_test, y_pred_test),
-                'predictions': y_pred_test
-            }
-        }
+        train_results = self._calculate_metrics(y_train, train_pred)
+        test_results = self._calculate_metrics(y_test, test_pred)
         
-        # Store model and results
+        # Store model
         self.models[model_type] = model
-        self.results[model_type] = results
         
-        return results
+        return {
+            'train': train_results,
+            'test': test_results
+        }
     
     def save_model(self, model_type: str, file_path: str) -> None:
         """
@@ -626,3 +625,48 @@ class ModelBuilder:
         plt.legend(loc='best')
         plt.grid(True)
         plt.show()
+    
+    def _initialize_model(self, model_type: str, params: Dict = None) -> Any:
+        """Initialize a model with given parameters.
+        
+        Args:
+            model_type (str): Type of model to initialize
+            params (Dict): Model parameters
+            
+        Returns:
+            Any: Initialized model instance
+        """
+        if params is None:
+            params = {}
+            
+        # Filter out problematic parameters
+        params = {k: v for k, v in params.items() if not k.startswith('mode.')}
+        if 'use_inf_as_null' in params:
+            del params['use_inf_as_null']
+        
+        # For XGBoost, explicitly set tree_method and disable categorical support
+        if model_type == 'xgboost':
+            params['tree_method'] = params.get('tree_method', 'hist')
+            params['enable_categorical'] = False
+            
+        return self.create_model(model_type, params)
+
+    def _calculate_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+        """
+        Calculate regression metrics.
+        
+        Args:
+            y_true (np.ndarray): True target values
+            y_pred (np.ndarray): Predicted target values
+            
+        Returns:
+            Dict[str, float]: Dictionary of metric names and values
+        """
+        return {
+            'mse': mean_squared_error(y_true, y_pred),
+            'rmse': np.sqrt(mean_squared_error(y_true, y_pred)),
+            'mae': mean_absolute_error(y_true, y_pred),
+            'r2': r2_score(y_true, y_pred),
+            'explained_variance': explained_variance_score(y_true, y_pred),
+            'predictions': y_pred
+        }

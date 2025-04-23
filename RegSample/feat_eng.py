@@ -50,24 +50,28 @@ class FeatureEngineer:
             columns = params['columns']
             operation = params['operation'].lower()
             
-            if operation == 'sum':
-                self.data[new_feature] = self.data[columns].sum(axis=1)
-            elif operation == 'mean':
-                self.data[new_feature] = self.data[columns].mean(axis=1)
-            elif operation == 'ratio':
-                if len(columns) == 2:
-                    self.data[new_feature] = self.data[columns[0]] / self.data[columns[1]].replace(0, np.nan)
-            elif operation == 'difference':
-                if len(columns) == 2:
-                    self.data[new_feature] = self.data[columns[0]] - self.data[columns[1]]
-            elif operation == 'product':
-                self.data[new_feature] = self.data[columns].prod(axis=1)
+            if isinstance(columns, str):
+                columns = [columns]
                 
-            self.feature_info[new_feature] = {
-                'type': 'derived',
-                'operation': operation,
-                'source_columns': columns
-            }
+            if all(col in self.data.columns for col in columns):
+                if operation == 'sum':
+                    self.data[new_feature] = self.data[columns].sum(axis=1)
+                elif operation == 'mean':
+                    self.data[new_feature] = self.data[columns].mean(axis=1)
+                elif operation == 'ratio':
+                    if len(columns) == 2 and (self.data[columns[1]] != 0).all():
+                        self.data[new_feature] = self.data[columns[0]] / self.data[columns[1]]
+                elif operation == 'difference':
+                    if len(columns) == 2:
+                        self.data[new_feature] = self.data[columns[0]] - self.data[columns[1]]
+                elif operation == 'product':
+                    self.data[new_feature] = self.data[columns].prod(axis=1)
+                
+                self.feature_info[new_feature] = {
+                    'type': 'derived',
+                    'operation': operation,
+                    'source_columns': columns
+                }
             
         return self.data
     
@@ -100,6 +104,9 @@ class FeatureEngineer:
         Returns:
             pd.DataFrame: Dataset with new interaction features
         """
+        if not isinstance(feature_pairs, list):
+            return self.data
+            
         for pair in feature_pairs:
             if len(pair) != 2:
                 continue
@@ -115,8 +122,8 @@ class FeatureEngineer:
                 
                 if interaction_type == 'multiplication':
                     self.data[new_feature] = numeric_data[feat1] * numeric_data[feat2]
-                elif interaction_type == 'division':
-                    self.data[new_feature] = numeric_data[feat1] / numeric_data[feat2].replace(0, np.nan)
+                elif interaction_type == 'division' and (self.data[feat2] != 0).all():
+                    self.data[new_feature] = numeric_data[feat1] / numeric_data[feat2]
                 elif interaction_type == 'addition':
                     self.data[new_feature] = numeric_data[feat1] + numeric_data[feat2]
                 elif interaction_type == 'subtraction':

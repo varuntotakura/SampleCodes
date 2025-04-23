@@ -1,0 +1,59 @@
+best_params:
+  algorithm: auto
+  leaf_size: 30
+  metric: minkowski
+  n_jobs: -1
+  n_neighbors: 5
+  p: 2
+  weights: uniform
+feature_selection: rfe
+model: knn
+test_metrics:
+  explained_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    6Rx82ulp5T8=
+  mae: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    aZ070sS12D8=
+  mse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    KE8rOM7Z1D8=
+  r2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    /smv7wlo5T8=
+timestamp: '20250423_020952'
+training_metrics:
+  explained_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    mCt8AQqQ6T8=
+  mae: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    vySg92mH0z8=
+  mse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    DMtm3F/dyT8=
+  r2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    S2msUSGP6T8=
+tuning_method: grid

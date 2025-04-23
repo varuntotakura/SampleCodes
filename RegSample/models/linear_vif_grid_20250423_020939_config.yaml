@@ -1,0 +1,57 @@
+best_params:
+  copy_X: true
+  fit_intercept: true
+  n_jobs: -1
+  normalize: true
+  positive: false
+feature_selection: vif
+model: linear
+test_metrics:
+  explained_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    kH2Ua82+3z8=
+  mae: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    mzqiNHe54D8=
+  mse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    En0pGyq+3z8=
+  r2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    svYfqbu+3z8=
+timestamp: '20250423_020939'
+training_metrics:
+  explained_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    U0T0el+E4D8=
+  mae: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    XrqRxYOj4D8=
+  mse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    wDVXv2AW3z8=
+  r2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    VET0el+E4D8=
+tuning_method: grid

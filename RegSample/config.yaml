@@ -53,7 +53,7 @@ feature_selection:
     - name: k_best
       enable: true
       params:
-        k: 10
+        k: 5  # Changed from 10 to 5 since we only have 8 features
         score_func: f_regression
     - name: lasso
       enable: true
@@ -82,6 +82,7 @@ models:
     fixed_params:
       objective: "reg:squarederror"
       nthread: -1
+      tree_method: "hist"  # Added this parameter to fix categorical data issue
     params:
       max_depth: [3, 5]
       learning_rate: [0.1]

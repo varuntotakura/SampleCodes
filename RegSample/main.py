@@ -63,12 +63,13 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--show-help', action='store_true', help='Show all config and CLI options')
     parser.add_argument('--eval-model-path', type=str, help='Path to a saved model file for evaluation')
     parser.add_argument('--eval-data-path', type=str, help='Path to a CSV file with data for evaluating a saved model')
+    parser.add_argument('--batch-mode', action='store_true', help='Run in batch mode using run.txt')
     parser.add_argument('-h', '--help', action='help', help='Show this help message and exit')
     return parser.parse_args()
 
 def load_or_generate_data(config: Dict[str, Any], input_file: str = None) -> pd.DataFrame:
     """Load data from file or generate synthetic data"""
-    if input_file or config['data']['input_file']:
+    if (input_file or config['data']['input_file']):
         file_path = input_file or config['data']['input_file']
         return pd.read_csv(file_path)
     elif config['data']['synthetic_data']['enable']:
@@ -90,12 +91,13 @@ def preprocess_data(data: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Preprocess the data according to configuration"""
     preprocessor = DataPreprocessor(data)
     
-    # Handle mode configuration with default fallback
+    # Handle mode configuration silently
     mode_config = config.get('mode', {})
-    preprocessor.use_inf_as_null = mode_config.get('use_inf_as_null', False)
+    setattr(preprocessor, 'use_inf_as_null', mode_config.get('use_inf_as_null', False))
     
-    # Handle infinities based on configuration
-    preprocessor._handle_infinities()
+    # Handle infinities silently
+    if hasattr(preprocessor, '_handle_infinities'):
+        preprocessor._handle_infinities()
     
     # Continue with rest of preprocessing
     if config['preprocessing']['missing_values']['strategy'] == 'auto':
@@ -509,8 +511,121 @@ def safe_run_feature_selection(data, config, method_override):
         return data
 
 def safe_run_model_pipeline(data, config, model_name, tune_method):
+    """Run the modeling pipeline with proper data type handling"""
     try:
-        return run_model_pipeline(data, config, model_name, tune_method)
+        # Ensure all data is numeric
+        numeric_data = data.copy()
+        for col in numeric_data.columns:
+            if not pd.api.types.is_numeric_dtype(numeric_data[col]):
+                numeric_data[col] = pd.to_numeric(numeric_data[col], errors='coerce')
+        
+        # Split data
+        target = config['data']['target_column']
+        splitter = DataSplitter(numeric_data)
+        train_data, test_data = splitter.simple_random_split(
+            test_size=config['data']['test_size'],
+            random_state=config['data']['random_state']
+        )
+        
+        # Convert data to numpy arrays with explicit float32 type to avoid categorical data errors
+        X_train = train_data.drop(columns=[target]).astype(np.float32).values
+        y_train = train_data[target].astype(np.float32).values
+        X_test = test_data.drop(columns=[target]).astype(np.float32).values
+        y_test = test_data[target].astype(np.float32).values
+        
+        # Initialize model builder
+        model_builder = ModelBuilder()
+        
+        # Get models to run
+        models_to_run = [m for m in config['models'] 
+                        if m['enable'] and (not model_name or m['name'] == model_name)]
+        
+        if not models_to_run:
+            logging.warning(f"No enabled models found for: {model_name}")
+            return {}
+            
+        results = {}
+        for model_config in models_to_run:
+            try:
+                model_type = model_config['name']
+                logging.info(f"Training model: {model_type}")
+                
+                # Apply fixed parameters from config for this model
+                fixed_params = model_config.get('fixed_params', {})
+                
+                # For XGBoost, explicitly set tree_method and disable categorical support
+                if model_type == 'xgboost':
+                    fixed_params['tree_method'] = fixed_params.get('tree_method', 'hist')
+                    fixed_params['enable_categorical'] = False
+                
+                # Apply hyperparameter tuning if specified
+                tuning_method = tune_method or config['tuning']['method']
+                if tuning_method == 'random':
+                    # Merge fixed params with tuning params
+                    param_distributions = model_config['params'].copy()
+                    for param, value in fixed_params.items():
+                        param_distributions[param] = [value]  # Use list for RandomizedSearchCV
+                    
+                    search_results = model_builder.random_search_cv(
+                        X_train, y_train,
+                        model_type=model_type,
+                        param_distributions=param_distributions,
+                        n_iter=config['tuning']['n_iter'],
+                        cv=config['tuning']['cv_folds']
+                    )
+                    best_params = search_results.get('best_params', {})
+                elif tuning_method == 'grid':
+                    # Merge fixed params with tuning params
+                    param_grid = model_config['params'].copy()
+                    for param, value in fixed_params.items():
+                        param_grid[param] = [value]  # Use list for GridSearchCV
+                    
+                    search_results = model_builder.grid_search_cv(
+                        X_train, y_train,
+                        model_type=model_type,
+                        param_grid=param_grid,
+                        cv=config['tuning']['cv_folds']
+                    )
+                    best_params = search_results.get('best_params', {})
+                
+                if not best_params:
+                    logging.warning(f"No best parameters found for {model_type}")
+                    continue
+                
+                # Add fixed parameters to best_params
+                for param, value in fixed_params.items():
+                    best_params[param] = value
+                
+                # Train and evaluate model
+                model_results = model_builder.train_evaluate_model(
+                    X_train, X_test, y_train, y_test,
+                    model_type=model_type,
+                    params=best_params
+                )
+                
+                if not model_results:
+                    logging.warning(f"No results obtained for {model_type}")
+                    continue
+                
+                # Store results only if we have valid metrics
+                if all(metric > -np.inf and metric < np.inf 
+                      for metrics in [model_results['train'], model_results['test']]
+                      for metric in metrics.values() if isinstance(metric, (int, float))):
+                    results[model_type] = {
+                        'model': model_builder.models[model_type],
+                        'train_results': model_results['train'],
+                        'test_results': model_results['test'],
+                        'best_params': best_params
+                    }
+                    logging.info(f"Successfully trained and evaluated {model_type}")
+                else:
+                    logging.warning(f"Invalid metrics obtained for {model_type}")
+            
+            except Exception as e:
+                logging.error(f"Error training model {model_type}: {str(e)}")
+                continue
+        
+        return results
     except Exception as e:
         logging.error(f"Model pipeline failed: {e}")
         return {}
@@ -649,6 +764,75 @@ def check_and_create_directories():
         dir_path.mkdir(parents=True, exist_ok=True)
         print(f"Ensured directory exists: {dir_path.absolute()}")
 
+def run_batch_commands(run_file_path=None):
+    """Execute all commands from run.txt with proper logging and result tracking"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = f"logs/batch_run_{timestamp}.log"
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    # Use default path if none provided
+    if run_file_path is None:
+        run_file_path = os.path.join(os.path.dirname(__file__), 'run.txt')
+    
+    if not os.path.exists(run_file_path):
+        raise FileNotFoundError(f"Run file not found: {run_file_path}")
+    
+    with open(run_file_path, 'r') as f:
+        commands = [cmd.strip() for cmd in f.readlines() if cmd.strip() and not cmd.startswith('#')]
+    
+    results = []
+    for i, cmd in enumerate(commands, 1):
+        logging.info(f"Executing command {i}/{len(commands)}: {cmd}")
+        print(f"\nExecuting command {i}/{len(commands)}...")
+        
+        try:
+            # Parse command into args, skipping 'python main.py'
+            cmd_parts = cmd.split()
+            if len(cmd_parts) > 2:  # Skip 'python main.py'
+                args = cmd_parts[2:]
+            else:
+                continue
+                
+            # Create parser for this command
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--config', type=str, default='config.yaml')
+            parser.add_argument('--model', type=str)
+            parser.add_argument('--feature-selection', type=str)
+            parser.add_argument('--tune-method', type=str)
+            
+            try:
+                cmd_args = parser.parse_args(args)
+            except Exception as e:
+                logging.error(f"Failed to parse arguments: {e}")
+                continue
+            
+            # Run the command through main pipeline
+            config = load_config(cmd_args.config)
+            setup_output_directories(config)
+            data = safe_load_or_generate_data(config, None)
+            data = safe_run_preprocessing(data, config)
+            data = safe_run_feature_engineering(data, config)
+            data = safe_run_feature_selection(data, config, cmd_args.feature_selection)
+            results = safe_run_model_pipeline(data, config, cmd_args.model, cmd_args.tune_method)
+            safe_save_results(results, config, cmd_args.model, cmd_args.feature_selection, cmd_args.tune_method)
+            
+            logging.info(f"Command {i} completed successfully")
+        except Exception as e:
+            logging.error(f"Command {i} failed: {str(e)}")
+            continue
+    
+    # Consolidate results
+    try:
+        consolidated_df = consolidate_results('results')
+        consolidated_df.to_csv(f'results/consolidated_results_{timestamp}.csv', index=False)
+        logging.info("Results consolidated successfully")
+    except Exception as e:
+        logging.error(f"Failed to consolidate results: {str(e)}")
+
 def main():
     """Main execution function"""
     # Create required directories first
@@ -751,4 +935,8 @@ def main():
                     print(f"    {param}: {value}")
 
 if __name__ == "__main__":
-    main()
+    args = parse_arguments()
+    if hasattr(args, 'batch_mode') and args.batch_mode:
+        run_batch_commands('run.txt')
+    else:
+        main()
