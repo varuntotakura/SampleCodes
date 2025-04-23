@@ -242,39 +242,49 @@ class ModelEvaluator:
         
         return results
     
-    def plot_residual_analysis(self):
+    def plot_residual_analysis(self, save_path=None):
         """
-        Create comprehensive residual analysis plots.
+        Plot residual analysis for the model.
+        
+        Args:
+            save_path (str, optional): Path to save the plot. If None, plot is displayed.
         """
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+        residuals = self.y_true - self.y_pred
+        
+        # Create figure with 2x2 subplots
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         
         # Residuals vs Predicted
-        ax1.scatter(self.y_pred, self.residuals)
-        ax1.axhline(y=0, color='r', linestyle='--')
-        ax1.set_xlabel('Predicted Values')
-        ax1.set_ylabel('Residuals')
-        ax1.set_title('Residuals vs Predicted Values')
+        axes[0, 0].scatter(self.y_pred, residuals, alpha=0.5)
+        axes[0, 0].set_xlabel('Predicted Values')
+        axes[0, 0].set_ylabel('Residuals')
+        axes[0, 0].set_title('Residuals vs Predicted Values')
+        axes[0, 0].axhline(y=0, color='r', linestyle='-')
         
-        # Residual Distribution
-        sns.histplot(data=self.residuals, kde=True, ax=ax2)
-        ax2.set_title('Residual Distribution')
+        # Distribution of Residuals
+        sns.histplot(residuals, kde=True, ax=axes[0, 1])
+        axes[0, 1].set_xlabel('Residuals')
+        axes[0, 1].set_ylabel('Frequency')
+        axes[0, 1].set_title('Distribution of Residuals')
         
         # Q-Q Plot
-        stats.probplot(self.residuals, dist="norm", plot=ax3)
-        ax3.set_title('Q-Q Plot')
+        stats.probplot(residuals, plot=axes[1, 0])
+        axes[1, 0].set_title('Q-Q Plot')
         
-        # True vs Predicted
-        ax4.scatter(self.y_true, self.y_pred)
-        ax4.plot([self.y_true.min(), self.y_true.max()],
-                [self.y_true.min(), self.y_true.max()],
-                'r--', lw=2)
-        ax4.set_xlabel('True Values')
-        ax4.set_ylabel('Predicted Values')
-        ax4.set_title('True vs Predicted Values')
+        # Residuals vs Order
+        axes[1, 1].plot(range(len(residuals)), residuals, 'o-')
+        axes[1, 1].set_xlabel('Observation Order')
+        axes[1, 1].set_ylabel('Residuals')
+        axes[1, 1].set_title('Residuals vs Order')
+        axes[1, 1].axhline(y=0, color='r', linestyle='-')
         
         plt.tight_layout()
-        plt.savefig(os.path.join(self.plots_dir, 'residual_analysis.png'))
-        plt.close()
+        
+        if save_path:
+            plt.savefig(save_path)
+            plt.close(fig)
+        else:
+            plt.show()
     
     def get_complete_evaluation(self, X: np.ndarray = None) -> Dict:
         """

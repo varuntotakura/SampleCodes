@@ -12,6 +12,7 @@ from sklearn.ensemble import (
 from sklearn.svm import SVR
 from sklearn.neighbors import KNeighborsRegressor
 import xgboost as xgb
+from xgboost import XGBRegressor
 from sklearn.model_selection import (
     RandomizedSearchCV, GridSearchCV,
     KFold, cross_val_score, train_test_split,
@@ -192,10 +193,8 @@ class ModelBuilder:
         
         # Filter out problematic parameters
         params = {k: v for k, v in params.items() if not k.startswith('mode.')}
-        
-        # Handle specific XGBoost parameter naming changes
         if 'use_inf_as_null' in params:
-            params['use_inf_as_na'] = params.pop('use_inf_as_null')
+            del params['use_inf_as_null']
         
         if model_type == 'linear':
             return LinearRegression(**params)
@@ -220,16 +219,37 @@ class ModelBuilder:
         elif model_type == 'gradient_boosting':
             return GradientBoostingRegressor(**params)
         elif model_type == 'xgboost':
-            try:
-                return xgb.XGBRegressor(**params)
-            except TypeError as e:
-                print(f"Warning: XGBoost parameter error suppressed: {str(e)}")
-                # Fall back to default parameters if there's an error
-                filtered_params = {k: v for k, v in params.items() 
-                                  if k in ['n_estimators', 'max_depth', 'learning_rate', 'subsample']}
-                return xgb.XGBRegressor(**filtered_params)
+            return self.create_xgboost_model(params)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
+    
+    def create_xgboost_model(self, params=None):
+        """
+        Create an XGBoost regression model with specified parameters.
+        
+        Args:
+            params (dict): Model parameters
+            
+        Returns:
+            XGBRegressor: Configured XGBoost model
+        """
+        default_params = {
+            'n_estimators': 100,
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'subsample': 0.8,
+            'colsample_bytree': 0.8,
+            'min_child_weight': 1,
+            'gamma': 0,
+            'random_state': 42,
+            'enable_categorical': True,
+            'use_label_encoder': False
+        }
+        
+        if params:
+            default_params.update(params)
+        
+        return XGBRegressor(**default_params)
     
     def bias_variance_analysis(self,
                              X: np.ndarray,

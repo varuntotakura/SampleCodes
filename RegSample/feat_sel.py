@@ -51,44 +51,39 @@ class FeatureSelector:
         
         return X, y
     
-    def select_k_best(self,
-                     target: str,
-                     k: int = 10,
-                     method: str = 'f_regression') -> pd.DataFrame:
+    def select_features(self, data: pd.DataFrame, target: str, k: int = 10) -> pd.DataFrame:
         """
-        Select k best features using various scoring methods.
+        Select features using SelectKBest with f_regression.
         
         Args:
+            data (pd.DataFrame): Input data
             target (str): Target variable name
             k (int): Number of features to select
-            method (str): Scoring method ('f_regression' or 'mutual_info')
             
         Returns:
             pd.DataFrame: Dataset with selected features
         """
-        X, y = self._prepare_numeric_data(target)
+        # Get numeric columns excluding target
+        numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
+        numeric_cols = numeric_cols[numeric_cols != target]
         
-        if method == 'f_regression':
-            scorer = f_regression
-        elif method == 'mutual_info':
-            scorer = mutual_info_regression
-        else:
-            raise ValueError(f"Unknown scoring method: {method}")
+        if len(numeric_cols) == 0:
+            return data
             
-        selector = SelectKBest(score_func=scorer, k=k)
-        selector.fit(X, y)
+        # Initialize selector with correct parameter
+        selector = SelectKBest(score_func=f_regression, k=k)
+        
+        # Fit and transform
+        X = data[numeric_cols]
+        y = data[target]
+        selected_features = selector.fit_transform(X, y)
         
         # Get selected feature names
-        selected_features = X.columns[selector.get_support()].tolist()
+        selected_mask = selector.get_support()
+        selected_names = numeric_cols[selected_mask].tolist()
         
-        # Store scores
-        self.feature_scores['k_best'] = {
-            'method': method,
-            'scores': dict(zip(X.columns, selector.scores_)),
-            'selected_features': selected_features
-        }
-        
-        return self.data[selected_features + [target]]
+        # Return selected features and target
+        return data[selected_names + [target]]
     
     def lasso_selection(self,
                        target: str,

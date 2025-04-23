@@ -6,6 +6,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Dict, Any
+from datetime import datetime
 
 from eda import ExploratoryAnalysis
 from data_split import DataSplitter
@@ -294,7 +295,8 @@ def run_model_pipeline(data: pd.DataFrame, config: Dict[str, Any],
     
     return results
 
-def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
+def save_results(results: Dict[str, Any], config: Dict[str, Any], current_model: str = None, 
+              current_feature_selection: str = None, current_tune_method: str = None) -> None:
     """Save model results and artifacts"""
     if not config['output']['save_model']:
         return
@@ -329,26 +331,32 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
         results_df = pd.concat([results_df, pd.DataFrame([model_metrics])])
     
     # Save results CSV
-    results_csv_path = output_dir / f"{args.model}_{args.feature_selection}_{args.tune_method}_results.csv"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_identifier = current_model if current_model else "all_models"
+    feature_sel = current_feature_selection if current_feature_selection else "default"
+    tune_method = current_tune_method if current_tune_method else "default"
+    
+    results_csv_path = output_dir / f"{model_identifier}_{feature_sel}_{tune_method}_{timestamp}_results.csv"
     results_df.to_csv(results_csv_path, index=False)
-    print(f"Results saved to {results_csv_path}")
+    logging.info(f"Results saved to {results_csv_path}")
     
     # Save models to model directory
     for model_name, model_results in results.items():
         if 'model' in model_results:
             # Save model
-            model_filename = f"{model_name}_{args.feature_selection}_{args.tune_method}_model.pkl"
+            model_filename = f"{model_name}_{feature_sel}_{tune_method}_{timestamp}_model.pkl"
             model_path = model_dir / model_filename
             try:
                 from create_model import ModelBuilder
                 ModelBuilder.save_model(model_results['model'], model_path)
-                print(f"Model saved to {model_path}")
+                logging.info(f"Model saved to {model_path}")
                 
                 # Save best configuration in YAML
                 best_config = {
                     'model': model_name,
-                    'feature_selection': args.feature_selection,
-                    'tuning_method': args.tune_method,
+                    'feature_selection': feature_sel,
+                    'tuning_method': tune_method,
+                    'timestamp': timestamp,
                     'best_params': model_results['best_params'] if 'best_params' in model_results else {},
                     'training_metrics': {
                         'r2': model_results['train_results']['r2'],
@@ -363,21 +371,21 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
                         'explained_variance': model_results['test_results']['explained_variance']
                     }
                 }
-                config_path = model_dir / f"{model_name}_{args.feature_selection}_{args.tune_method}_config.yaml"
+                config_path = model_dir / f"{model_name}_{feature_sel}_{tune_method}_{timestamp}_config.yaml"
                 with open(config_path, 'w') as f:
                     yaml.dump(best_config, f, default_flow_style=False)
-                print(f"Best configuration saved to {config_path}")
+                logging.info(f"Best configuration saved to {config_path}")
                 
             except Exception as e:
-                print(f"Error saving model {model_name}: {e}")
+                logging.error(f"Error saving model {model_name}: {e}")
     
     # Save detailed evaluation results
     for model_name, model_results in results.items():
         if 'evaluation' in model_results:
-            eval_path = output_dir / f'{model_name}_{args.feature_selection}_{args.tune_method}_evaluation.yaml'
+            eval_path = output_dir / f'{model_name}_{feature_sel}_{tune_method}_{timestamp}_evaluation.yaml'
             with open(eval_path, 'w') as f:
                 yaml.dump(model_results['evaluation'], f)
-            print(f"Evaluation results saved to {eval_path}")
+            logging.info(f"Evaluation results saved to {eval_path}")
 
 def generate_sample_data(n_samples=1000, n_features=208):
     """
@@ -507,9 +515,9 @@ def safe_run_model_pipeline(data, config, model_name, tune_method):
         logging.error(f"Model pipeline failed: {e}")
         return {}
 
-def safe_save_results(results, config):
+def safe_save_results(results, config, current_model=None, current_feature_selection=None, current_tune_method=None):
     try:
-        save_results(results, config)
+        save_results(results, config, current_model, current_feature_selection, current_tune_method)
     except Exception as e:
         logging.warning(f"Saving results failed: {e}")
 
@@ -725,7 +733,7 @@ def main():
     
     # Save results
     print("\n=== Saving Results ===")
-    safe_save_results(results, config)
+    safe_save_results(results, config, args.model, args.feature_selection, args.tune_method)
     print("\n=== Process Complete ===")
     
     # Print a summary of the results
