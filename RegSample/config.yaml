@@ -37,7 +37,7 @@ feature_engineering:
     interactions:
       enable: true
       feature_pairs: [["MedInc", "AveRooms"], ["Population", "AveOccup"]]
-      interaction_type: "multiplication"  # Fixed: Added interaction_type
+      interaction_type: "multiplication"
     pca:
       enable: true
       n_components: 5
@@ -63,7 +63,7 @@ feature_selection:
     - name: random_forest
       enable: true
       params:
-        n_estimators: 100
+        n_estimators: 50
         threshold: 0.01
     - name: vif
       enable: true
@@ -75,33 +75,33 @@ feature_selection:
         n_features_to_select: 5
         step: 1
 
-# Model Configuration
+# Model Configuration - Using smaller parameter grids for faster execution
 models:
   - name: 'xgboost'
     enable: true
-    fixed_params:  # Parameters that don't need tuning
+    fixed_params:
       objective: "reg:squarederror"
       nthread: -1
-    params:  # Parameters to tune
-      max_depth: [3, 5, 7]
-      learning_rate: [0.01, 0.1, 0.3]
-      n_estimators: [100, 200]
-      subsample: [0.8, 1.0]
-      colsample_bytree: [0.8, 1.0]
-      min_child_weight: [1, 3, 5]
+    params:
+      max_depth: [3, 5]
+      learning_rate: [0.1]
+      n_estimators: [100]
+      subsample: [0.8]
+      colsample_bytree: [0.8]
+      min_child_weight: [1]
 
   - name: 'adaboost'
     enable: true
     params:
-      n_estimators: [50, 100, 200]
-      learning_rate: [0.01, 0.1, 0.5, 1.0]
-      loss: ['linear', 'square', 'exponential']
+      n_estimators: [50]
+      learning_rate: [0.1]
+      loss: ['linear']
 
   - name: 'linear'
     enable: true
     params:
-      fit_intercept: [true, false]
-      normalize: [true, false]
+      fit_intercept: [true]
+      normalize: [true]
       copy_X: [true]
       n_jobs: [-1]
       positive: [false]
@@ -109,7 +109,7 @@ models:
   - name: 'lasso'
     enable: True
     params:
-      alpha: [0.001, 0.01, 0.1, 1.0]
+      alpha: [0.1]
       fit_intercept: [True]
       max_iter: [1000]
       tol: [0.0001]
@@ -119,7 +119,7 @@ models:
   - name: 'ridge'
     enable: True
     params:
-      alpha: [0.001, 0.01, 0.1, 1.0]
+      alpha: [0.1]
       fit_intercept: [True]
       max_iter: [1000]
       tol: [0.001]
@@ -129,8 +129,8 @@ models:
   - name: 'elastic_net'
     enable: True
     params:
-      alpha: [0.001, 0.01, 0.1, 1.0]
-      l1_ratio: [0.1, 0.5, 0.7, 0.9]
+      alpha: [0.1]
+      l1_ratio: [0.5]
       fit_intercept: [True]
       max_iter: [1000]
       tol: [0.0001]
@@ -140,21 +140,21 @@ models:
   - name: 'svr'
     enable: True
     params:
-      C: [0.1, 1.0, 10.0]
-      epsilon: [0.1, 0.2, 0.3]
-      kernel: ['rbf', 'linear']
-      gamma: ['scale', 'auto']
+      C: [1.0]
+      epsilon: [0.1]
+      kernel: ['rbf']
+      gamma: ['scale']
       tol: [0.001]
       max_iter: [1000]
 
   - name: 'random_forest'
     enable: True
     params:
-      n_estimators: [100, 200, 500]
-      max_depth: [null, 10, 20]
-      min_samples_split: [2, 5]
-      min_samples_leaf: [1, 2]
-      max_features: ['auto', 'sqrt']
+      n_estimators: [100]
+      max_depth: [10]
+      min_samples_split: [2]
+      min_samples_leaf: [1]
+      max_features: ['auto']
       bootstrap: [True]
       criterion: ['squared_error']
       max_leaf_nodes: [null]
@@ -166,9 +166,9 @@ models:
   - name: 'gradient_boosting'
     enable: True
     params:
-      n_estimators: [100, 200]
+      n_estimators: [100]
       learning_rate: [0.1]
-      max_depth: [3, 5]
+      max_depth: [3]
       min_samples_split: [2]
       min_samples_leaf: [1]
       subsample: [0.8]
@@ -180,19 +180,19 @@ models:
   - name: 'knn'
     enable: true
     params:
-      n_neighbors: [3, 5, 7, 9]
-      weights: ['uniform', 'distance']
+      n_neighbors: [5]
+      weights: ['uniform']
       algorithm: ['auto']
-      leaf_size: [20, 30]
-      p: [1, 2]
+      leaf_size: [30]
+      p: [2]
       metric: ['minkowski']
       n_jobs: [-1]
 
 # Hyperparameter Tuning
 tuning:
-  method: random  # 'random' or 'grid'
-  cv_folds: 2  # Changed from 1 to 5
-  n_iter: 2  # Increased from 2 to 10 for better random search
+  method: random
+  cv_folds: 2
+  n_iter: 2
   scoring: neg_mean_squared_error
 
 # Model Evaluation
@@ -213,8 +213,8 @@ evaluation:
     cross_validation: True
   plots:
     residuals: True
-    learning_curves: True
-    validation_curves: True
+    learning_curves: False  # Save time by disabling some plots
+    validation_curves: False  # Save time by disabling some plots
     feature_importance: True
     prediction_error: True
 

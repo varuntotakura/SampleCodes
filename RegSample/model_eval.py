@@ -11,6 +11,7 @@ import seaborn as sns
 from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.stattools import durbin_watson
 import statsmodels.api as sm
+import os
 
 class ModelEvaluator:
     """
@@ -23,18 +24,33 @@ class ModelEvaluator:
     - Percentile Distribution Analysis
     """
     
-    def __init__(self, y_true: np.ndarray, y_pred: np.ndarray):
+    def __init__(self, y_true: np.ndarray, y_pred: np.ndarray, config=None):
         """
         Initialize ModelEvaluator with actual and predicted values.
         
         Args:
             y_true (np.ndarray): True target values
             y_pred (np.ndarray): Predicted target values
+            config (dict, optional): Configuration dictionary
         """
         self.y_true = y_true
         self.y_pred = y_pred
+        self.config = config or {}
+        # Set default configuration values
+        self.mode_config = self.config.get('mode', {})
+        self.use_inf_as_null = self.mode_config.get('use_inf_as_null', False)
         self.residuals = y_true - y_pred
         
+        # Set up output directories from config
+        output_config = self.config.get('output', {})
+        self.plots_dir = output_config.get('plots_path', 'plots')
+        self.results_dir = output_config.get('results_path', 'results')
+        
+        # Create directories if they don't exist
+        for directory in [self.plots_dir, self.results_dir]:
+            os.makedirs(directory, exist_ok=True)
+            print(f"Ensuring directory exists: {os.path.abspath(directory)}")
+            
     def calculate_error_metrics(self) -> Dict[str, float]:
         """
         Calculate various error metrics.
@@ -90,7 +106,8 @@ class ModelEvaluator:
             sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
             plt.title('Feature Correlation Heatmap')
             plt.tight_layout()
-            plt.show()
+            plt.savefig(os.path.join(self.plots_dir, 'feature_correlation_heatmap.png'))
+            plt.close()
         
         return results
     
@@ -117,7 +134,8 @@ class ModelEvaluator:
         plt.xlabel('Predicted Values')
         plt.ylabel('Residuals')
         plt.title('Residuals vs Predicted Values')
-        plt.show()
+        plt.savefig(os.path.join(self.plots_dir, 'residuals_vs_predicted.png'))
+        plt.close()
         
         return {
             'bp_statistic': bp_test[0],
@@ -157,7 +175,8 @@ class ModelEvaluator:
         ax2.set_title('Lag Plot of Residuals')
         
         plt.tight_layout()
-        plt.show()
+        plt.savefig(os.path.join(self.plots_dir, 'autocorrelation_analysis.png'))
+        plt.close()
         
         return {
             'durbin_watson': dw_statistic,
@@ -218,7 +237,8 @@ class ModelEvaluator:
         ax2.set_title('Distribution of Residuals')
         
         plt.tight_layout()
-        plt.show()
+        plt.savefig(os.path.join(self.plots_dir, 'distribution_analysis.png'))
+        plt.close()
         
         return results
     
@@ -253,7 +273,8 @@ class ModelEvaluator:
         ax4.set_title('True vs Predicted Values')
         
         plt.tight_layout()
-        plt.show()
+        plt.savefig(os.path.join(self.plots_dir, 'residual_analysis.png'))
+        plt.close()
     
     def get_complete_evaluation(self, X: np.ndarray = None) -> Dict:
         """

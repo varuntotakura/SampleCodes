@@ -5,6 +5,7 @@ import seaborn as sns
 from scipy import stats
 from scipy.stats import wilcoxon, ttest_ind, spearmanr, pearsonr
 from typing import Union, List, Tuple, Dict, Any
+import os
 
 class ExploratoryAnalysis:
     """
@@ -20,6 +21,9 @@ class ExploratoryAnalysis:
             data (pd.DataFrame): Input dataset for analysis
         """
         self.data = data
+        self.plots_dir = 'plots'
+        if not os.path.exists(self.plots_dir):
+            os.makedirs(self.plots_dir)
         
     def _get_column_type(self, column: str) -> str:
         """
@@ -78,7 +82,8 @@ class ExploratoryAnalysis:
             ax2.set_title(f'Box Plot of {column}')
             
             plt.tight_layout()
-            plt.show()
+            plt.savefig(os.path.join(self.plots_dir, f'univariate_{column}.png'))
+            plt.close()
             
         elif col_type in ['categorical', 'text']:
             # Value counts and proportions
@@ -96,7 +101,8 @@ class ExploratoryAnalysis:
             plt.figure(figsize=(10, 6))
             sns.countplot(data=self.data, y=column, order=value_counts.index)
             plt.title(f'Distribution of {column}')
-            plt.show()
+            plt.savefig(os.path.join(self.plots_dir, f'categorical_{column}.png'))
+            plt.close()
         
         return stats_dict
     
@@ -132,7 +138,8 @@ class ExploratoryAnalysis:
             plt.figure(figsize=(10, 6))
             sns.regplot(data=self.data, x=x_column, y=y_column)
             plt.title(f'Scatter Plot: {x_column} vs {y_column}')
-            plt.show()
+            plt.savefig(os.path.join(self.plots_dir, f'scatter_{x_column}_vs_{y_column}.png'))
+            plt.close()
             
         elif (x_type in ['categorical', 'boolean', 'text']) and y_type == 'numeric':
             # Group statistics
@@ -144,7 +151,8 @@ class ExploratoryAnalysis:
             sns.boxplot(data=self.data, x=x_column, y=y_column)
             plt.xticks(rotation=45)
             plt.title(f'Box Plot: {x_column} vs {y_column}')
-            plt.show()
+            plt.savefig(os.path.join(self.plots_dir, f'boxplot_{x_column}_vs_{y_column}.png'))
+            plt.close()
             
             # ANOVA test
             groups = [group for name, group in self.data.groupby(x_column)[y_column]]
@@ -282,7 +290,8 @@ class ExploratoryAnalysis:
         plt.xticks(rotation=45)
         plt.yticks(rotation=0)
         plt.tight_layout()
-        plt.show()
+        plt.savefig(os.path.join(self.plots_dir, f'correlation_matrix_{method}.png'))
+        plt.close()
         
         return corr_matrix
     
@@ -455,4 +464,5 @@ class ExploratoryAnalysis:
             plt.xticks(rotation=45)
         
         plt.tight_layout()
-        plt.show()
+        plt.savefig(os.path.join(self.plots_dir, 'all_distributions.png'))
+        plt.close()

@@ -300,6 +300,11 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
         return
         
     output_dir = Path(config['output']['results_path'])
+    model_dir = Path(config['output']['model_path'])
+    
+    # Ensure directories exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+    model_dir.mkdir(parents=True, exist_ok=True)
     
     # Save model results
     results_df = pd.DataFrame()
@@ -311,9 +316,29 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
             'train_mse': model_results['train_results']['mse'],
             'test_mse': model_results['test_results']['mse']
         }
+        
+        # Add best parameters to results
+        if 'best_params' in model_results:
+            for param_name, param_value in model_results['best_params'].items():
+                model_metrics[f'param_{param_name}'] = param_value
+                
         results_df = pd.concat([results_df, pd.DataFrame([model_metrics])])
     
-    results_df.to_csv(output_dir / 'model_results.csv', index=False)
+    # Save results CSV
+    results_csv_path = output_dir / 'model_results.csv'
+    results_df.to_csv(results_csv_path, index=False)
+    print(f"Results saved to {results_csv_path}")
+    
+    # Save models to model directory
+    for model_name, model_results in results.items():
+        if 'model' in model_results:
+            model_path = model_dir / f"{model_name}_model.pkl"
+            try:
+                from create_model import ModelBuilder
+                ModelBuilder.save_model(model_results['model'], model_path)
+                print(f"Model saved to {model_path}")
+            except Exception as e:
+                print(f"Error saving model {model_name}: {e}")
     
     # Save detailed evaluation results
     for model_name, model_results in results.items():
@@ -321,6 +346,7 @@ def save_results(results: Dict[str, Any], config: Dict[str, Any]) -> None:
             eval_path = output_dir / f'{model_name}_evaluation.yaml'
             with open(eval_path, 'w') as f:
                 yaml.dump(model_results['evaluation'], f)
+            print(f"Evaluation results saved to {eval_path}")
 
 def generate_sample_data(n_samples=1000, n_features=208):
     """

@@ -467,6 +467,16 @@ class ModelBuilder:
         if model_type not in self.models:
             raise ValueError(f"Model '{model_type}' not found. Train the model before saving.")
         joblib.dump(self.models[model_type], file_path)
+        
+    @staticmethod
+    def save_model(model, file_path: str) -> None:
+        """
+        Static method to save any model to disk using joblib.
+        Args:
+            model: The model object to save
+            file_path (str): Path to save the model file.
+        """
+        joblib.dump(model, file_path)
 
     @staticmethod
     def load_model(file_path: str):
