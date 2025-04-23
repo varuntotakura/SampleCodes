@@ -1,0 +1,297 @@
+autocorrelation:
+  durbin_watson: !!python/object/apply:numpy.core.multiarray.scalar
+  - &id002 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    srWgW8iryj8=
+  interpretation: Positive autocorrelation
+correlation:
+  feature_residual_correlations: !!python/object:pandas.core.series.Series
+    _flags:
+      allows_duplicate_labels: true
+    _metadata:
+    - _name
+    _mgr: !!python/object/new:pandas.core.internals.managers.SingleBlockManager
+      state: !!python/tuple
+      - &id005
+        - !!python/object/apply:pandas.core.indexes.base._new_Index
+          - &id003 !!python/name:pandas.core.indexes.base.Index ''
+          - data: !!python/object/apply:numpy.core.multiarray._reconstruct
+              args:
+              - &id001 !!python/name:numpy.ndarray ''
+              - !!python/tuple
+                - 0
+              - !!binary |
+                Yg==
+              state: !!python/tuple
+              - 1
+              - !!python/tuple
+                - 8
+              - &id004 !!python/object/apply:numpy.dtype
+                args:
+                - O8
+                - false
+                - true
+                state: !!python/tuple
+                - 3
+                - '|'
+                - null
+                - null
+                - null
+                - -1
+                - -1
+                - 63
+              - false
+              - - MedInc
+                - HouseAge
+                - AveRooms
+                - AveBedrms
+                - Population
+                - AveOccup
+                - Latitude
+                - Longitude
+            name: null
+      - - &id006 !!python/object/apply:numpy.core.multiarray._reconstruct
+          args:
+          - *id001
+          - !!python/tuple
+            - 0
+          - !!binary |
+            Yg==
+          state: !!python/tuple
+          - 1
+          - !!python/tuple
+            - 8
+          - *id002
+          - false
+          - !!binary |
+            5M3HOzUL5D9bx4XAbtPAP+2XZsftfr0/WUWXemQoqL8l/OL53gOhv15IOwIvxJi/W7rhBaD2wr90
+            cXX7f72mvw==
+      - - !!python/object/apply:pandas.core.indexes.base._new_Index
+          - *id003
+          - data: !!python/object/apply:numpy.core.multiarray._reconstruct
+              args:
+              - *id001
+              - !!python/tuple
+                - 0
+              - !!binary |
+                Yg==
+              state: !!python/tuple
+              - 1
+              - !!python/tuple
+                - 8
+              - *id004
+              - false
+              - - MedInc
+                - HouseAge
+                - AveRooms
+                - AveBedrms
+                - Population
+                - AveOccup
+                - Latitude
+                - Longitude
+            name: null
+      - 0.14.1:
+          axes: *id005
+          blocks:
+          - mgr_locs: !!python/object/apply:builtins.slice
+            - 0
+            - 8
+            - 1
+            values: *id006
+    _name: null
+    _typ: series
+    attrs: {}
+  prediction_correlation: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    JUhippZF0T8=
+error_metrics:
+  adjusted_r2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    nMVmk4Ww4b8=
+  emse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    P4Z07oCKAEA=
+  mae: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    XR4J5riN8D8=
+  mse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    EuIVaUyKAEA=
+  r2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    CpZSy+ev4b8=
+  rmse: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    K1YCRpkB9z8=
+homoscedasticity:
+  bp_statistic: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    wKej6blic0A=
+  interpretation: Heteroscedastic
+  p_value: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    NqT9T+6sqzE=
+percentile_distribution:
+  predictions:
+    p1: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAoESr1T8=
+    p10: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAYHya7z8=
+    p25: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAwHdz8T8=
+    p5: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAQMHT5z8=
+    p50: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAIJ8P8z8=
+    p75: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAgNR09D8=
+    p90: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAgNR09D8=
+    p95: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAgITm9D8=
+    p99: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAA4KuC9j8=
+  residuals:
+    p1: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      5pE/6K+U5r8=
+    p10: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      wRcmU0UL078=
+    p25: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      wCCwcuxZtj8=
+    p5: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      CM4ZkQ6U3L8=
+    p50: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      xks3iZh25D8=
+    p75: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      XI/CBVoo9z8=
+    p90: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      k+Tyj3uDBEA=
+    p95: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      pRPQBG42DUA=
+    p99: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      OGItrq6TDkA=
+  true_values:
+    p1: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      AAAAAAAA4D8=
+    p10: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      vHSTGARW6j8=
+    p25: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      iUFg5dAi8z8=
+    p5: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      yXa+nxov5T8=
+    p50: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      jZduEoPA/D8=
+    p75: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      ILByaJEtBUA=
+    p90: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      VOOlm8QgDkA=
+    p95: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      fybChqeXE0A=
+    p99: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id002
+    - !!binary |
+      HLEWnwIAFEA=
+variance:
+  explained_variance_ratio: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    kOWzxKc/sD8=
+  prediction_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - f4
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    53gjPQ==
+  residual_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    22rTCtvz8z8=
+  total_variance: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id002
+  - !!binary |
+    HUn9rwdO9T8=

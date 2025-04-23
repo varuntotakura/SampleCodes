@@ -46,6 +46,96 @@ class ExploratoryAnalysis:
         
     def univariate_analysis(self, column: str) -> Dict[str, Any]:
         """
+        Perform comprehensive univariate analysis based on column type without visualizations.
+
+        Args:
+            column (str): Column name to analyze
+
+        Returns:
+            Dict[str, Any]: Dictionary containing statistical measures
+        """
+        col_type = self._get_column_type(column)
+        stats_dict = {}
+
+        if col_type in ['numeric', 'boolean']:
+            stats_dict.update({
+                'count': self.data[column].count(),
+                'mean': self.data[column].mean(),
+                'median': self.data[column].median(),
+                'mode': self.data[column].mode()[0] if not self.data[column].mode().empty else None,
+                'min': self.data[column].min(),
+                'max': self.data[column].max(),
+                'std': self.data[column].std(),
+                'variance': self.data[column].var(),
+                'skewness': self.data[column].skew(),
+                'kurtosis': self.data[column].kurtosis(),
+                'q1': self.data[column].quantile(0.25),
+                'q3': self.data[column].quantile(0.75),
+                'iqr': self.data[column].quantile(0.75) - self.data[column].quantile(0.25),
+                'missing_values': self.data[column].isnull().sum()
+            })
+
+        elif col_type in ['categorical', 'text']:
+            value_counts = self.data[column].value_counts()
+            proportions = self.data[column].value_counts(normalize=True)
+
+            stats_dict.update({
+                'count': self.data[column].count(),
+                'unique_values': self.data[column].nunique(),
+                'mode': self.data[column].mode()[0] if not self.data[column].mode().empty else None,
+                'missing_values': self.data[column].isnull().sum(),
+                'value_counts': value_counts.to_dict(),
+                'proportions': proportions.to_dict()
+            })
+
+        return stats_dict
+    
+    def bivariate_analysis(self, x_column: str, y_column: str) -> Dict[str, Any]:
+        """
+        Perform bivariate analysis between two variables without visualizations.
+
+        Args:
+            x_column (str): First variable
+            y_column (str): Second variable
+
+        Returns:
+            Dict[str, Any]: Dictionary containing analysis results
+        """
+        x_type = self._get_column_type(x_column)
+        y_type = self._get_column_type(y_column)
+
+        results = {}
+
+        if x_type == 'numeric' and y_type == 'numeric':
+            pearson_corr, p_pearson = pearsonr(self.data[x_column].dropna(), self.data[y_column].dropna())
+            spearman_corr, p_spearman = spearmanr(self.data[x_column], self.data[y_column])
+
+            results.update({
+                'pearson_correlation': pearson_corr,
+                'pearson_p_value': p_pearson,
+                'spearman_correlation': spearman_corr,
+                'spearman_p_value': p_spearman
+            })
+
+        elif (x_type in ['categorical', 'boolean', 'text']) and y_type == 'numeric':
+            group_stats = self.data.groupby(x_column)[y_column].agg(['mean', 'std', 'count', 'min', 'max'])
+            results['group_statistics'] = group_stats.to_dict()
+
+            try:
+                groups = [group for name, group in self.data.groupby(x_column)[y_column] if len(group) > 1]
+                if len(groups) >= 2:
+                    f_stat, p_value = stats.f_oneway(*groups)
+                    results.update({
+                        'anova_f_statistic': f_stat,
+                        'anova_p_value': p_value
+                    })
+            except Exception as e:
+                results['anova_error'] = str(e)
+
+        return results
+
+    def univariate_analysis_plot(self, column: str) -> Dict[str, Any]:
+        """
         Perform comprehensive univariate analysis based on column type.
         
         Args:
@@ -106,7 +196,7 @@ class ExploratoryAnalysis:
         
         return stats_dict
     
-    def bivariate_analysis(self, x_column: str, y_column: str) -> Dict[str, Any]:
+    def bivariate_analysis_plot(self, x_column: str, y_column: str) -> Dict[str, Any]:
         """
         Perform bivariate analysis between two variables based on their types.
         

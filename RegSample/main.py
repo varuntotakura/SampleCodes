@@ -700,7 +700,52 @@ def run_pipeline_step(step_function, *args, **kwargs):
         logging.error(f"Error in {step_function.__name__}: {e}")
         return None
 
-def run_eda(data: pd.DataFrame, config: dict) -> None:
+def run_eda(data: pd.DataFrame, config: dict) -> dict:
+    """Run exploratory data analysis step and return summary results in DataFrames"""
+    analyzer = ExploratoryAnalysis(data)
+
+    # Basic summary of data (could also return it)
+    analyzer.basic_summary()
+
+    univariate_results = []
+    bivariate_results = []
+
+    # Univariate analysis
+    if config.get("perform_univariate", True):
+        for column in data.columns:
+            try:
+                stats = analyzer.univariate_analysis(column)
+                stats["column"] = column
+                univariate_results.append(stats)
+            except Exception as e:
+                logging.error(f"Error in univariate_analysis for {column}: {str(e)}")
+
+    # Bivariate analysis: numeric-numeric
+    if config.get("perform_bivariate", True):
+        numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
+        for i in range(len(numeric_cols)):
+            for j in range(i + 1, len(numeric_cols)):
+                x_col, y_col = numeric_cols[i], numeric_cols[j]
+                try:
+                    bivar_stats = analyzer.bivariate_analysis(x_col, y_col)
+                    bivar_stats["x_col"] = x_col
+                    bivar_stats["y_col"] = y_col
+                    bivariate_results.append(bivar_stats)
+                except Exception as e:
+                    logging.error(f"Error in bivariate_analysis for {x_col} and {y_col}: {str(e)}")
+
+    # Convert results to DataFrames
+    univariate_df = pd.DataFrame(univariate_results)
+    print("Univariate Analysis Results:")
+    print(univariate_df)
+
+    bivariate_df = pd.DataFrame(bivariate_results)
+    print("Bivariate Analysis Results:")
+    print(bivariate_df)
+
+    return data
+
+def run_eda_plots(data: pd.DataFrame, config: dict) -> None:
     """Run exploratory data analysis step"""
     analyzer = ExploratoryAnalysis(data)
     analyzer.basic_summary()
