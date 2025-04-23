@@ -302,9 +302,24 @@ class ModelEvaluator:
             X (np.ndarray, optional): Feature matrix for correlation analysis
             
         Returns:
-            Dict: Complete evaluation results
+            Dict: Complete evaluation results with formatted values
         """
-        return {
+        def format_value(v):
+            """Helper to convert numpy/pandas values to native Python types"""
+            if isinstance(v, (np.integer, np.floating)):
+                return float(v)
+            elif isinstance(v, dict):
+                return {k: format_value(v) for k, v in v.items()}
+            elif isinstance(v, pd.Series):
+                return {str(k): format_value(v) for k, v in v.items()}
+            elif isinstance(v, pd.DataFrame):
+                return v.to_dict()
+            elif isinstance(v, (list, tuple, np.ndarray)):
+                return [format_value(x) for x in v]
+            return v
+
+        # Get all evaluation results
+        results = {
             'error_metrics': self.calculate_error_metrics(),
             'correlation': self.analyze_correlation(X),
             'homoscedasticity': self.test_homoscedasticity(),
@@ -312,6 +327,9 @@ class ModelEvaluator:
             'variance': self.analyze_variance(),
             'percentile_distribution': self.analyze_percentile_distribution()
         }
+
+        # Format all values to be YAML-friendly
+        return {k: format_value(v) for k, v in results.items()}
     
     @staticmethod
     def evaluate_training_model(model, X: np.ndarray, y_true: np.ndarray, X_full: np.ndarray = None) -> dict:
@@ -325,7 +343,11 @@ class ModelEvaluator:
         Returns:
             dict: Complete evaluation results
         """
-        y_pred = model.predict(X)
+        if model is not None:
+            y_pred = model.predict(X)
+        else:
+            y_pred = X  # If no model is provided, assume X is already predictions
+            
         evaluator = ModelEvaluator(y_true, y_pred)
         return evaluator.get_complete_evaluation(X_full)
 
