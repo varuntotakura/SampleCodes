@@ -1,2 +1,0 @@
-model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_alpha,param_fit_intercept,param_max_iter,param_random_state,param_solver,param_tol
-ridge,0.7058098264995509,0.6216914098711563,0.2953452169895172,0.3723020851612091,0.3548574149608612,0.3547186553478241,0.7058098316192627,0.6217163801193237,0.1,True,1000,42,auto,0.001

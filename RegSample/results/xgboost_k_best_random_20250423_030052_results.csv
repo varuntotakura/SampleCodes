@@ -1,2 +1,0 @@
-model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_tree_method,param_subsample,param_objective,param_nthread,param_n_estimators,param_min_child_weight,param_max_depth,param_learning_rate,param_enable_categorical,param_colsample_bytree
-xgboost,0.930329472034667,0.9153233311483703,0.06994406878948212,0.08333224058151245,0.1881093978881836,0.20140840113162994,0.9303295016288757,0.9153233170509338,hist,0.8,reg:squarederror,-1,100,1,5,0.1,False,0.8

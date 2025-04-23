@@ -5,12 +5,12 @@ data:
   test_size: 0.2
   random_state: 42
   synthetic_data:
-    enable: false
+    enable: False
 
 # Mode Configuration
 mode:
-  use_inf_as_null: false
-  handle_outliers: true
+  use_inf_as_null: False
+  handle_outliers: True
 
 # Preprocessing Configuration
 preprocessing:
@@ -23,10 +23,10 @@ preprocessing:
 
 # Feature Engineering
 feature_engineering:
-  enable: true
+  enable: False
   methods:
     derived_features:
-      enable: true
+      enable: True
       operations:
         - name: "rooms_per_household"
           columns: ["AveRooms", "AveOccup"]
@@ -35,42 +35,42 @@ feature_engineering:
           columns: ["AveBedrms", "AveRooms"]
           operation: "ratio"
     interactions:
-      enable: true
+      enable: True
       feature_pairs: [["MedInc", "AveRooms"], ["Population", "AveOccup"]]
       interaction_type: "multiplication"
     pca:
-      enable: true
+      enable: True
       n_components: 5
     polynomial:
-      enable: true
+      enable: True
       degree: 2
-      interaction_only: false
+      interaction_only: False
 
 # Feature Selection
 feature_selection:
-  enable: true
+  enable: False
   methods:
     - name: k_best
-      enable: true
+      enable: True
       params:
-        k: 5  # Changed from 10 to 5 since we only have 8 features
+        k: 5
         score_func: f_regression
     - name: lasso
-      enable: true
+      enable: True
       params:
         alpha: [0.001, 0.01, 0.1, 1.0]
         threshold: 0.01
     - name: random_forest
-      enable: true
+      enable: True
       params:
         n_estimators: 50
         threshold: 0.01
     - name: vif
-      enable: true
+      enable: True
       params:
         threshold: 5.0
     - name: rfe
-      enable: true
+      enable: True
       params:
         n_features_to_select: 5
         step: 1
@@ -78,7 +78,7 @@ feature_selection:
 # Model Configuration - Using smaller parameter grids for faster execution
 models:
   - name: 'xgboost'
-    enable: true
+    enable: True
     fixed_params:
       objective: "reg:squarederror"
       nthread: -1
@@ -92,20 +92,20 @@ models:
       min_child_weight: [1]
 
   - name: 'adaboost'
-    enable: true
+    enable: True
     params:
       n_estimators: [50]
       learning_rate: [0.1]
       loss: ['linear']
 
   - name: 'linear'
-    enable: true
+    enable: True
     params:
-      fit_intercept: [true]
-      normalize: [true]
-      copy_X: [true]
+      fit_intercept: [True]
+      normalize: [True]
+      copy_X: [True]
       n_jobs: [-1]
-      positive: [false]
+      positive: [False]
 
   - name: 'lasso'
     enable: True
@@ -179,7 +179,7 @@ models:
       random_state: [42]
 
   - name: 'knn'
-    enable: true
+    enable: True
     params:
       n_neighbors: [5]
       weights: ['uniform']

@@ -1,2 +1,0 @@
-model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_copy_X,param_fit_intercept,param_n_jobs,param_normalize,param_positive
-linear,0.6753445240402915,0.6613206009253954,0.325930118560791,0.3333021104335785,0.4302786886692047,0.4342848062515259,0.6753445267677307,0.6613341569900513,True,True,-1,True,False

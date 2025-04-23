@@ -63,7 +63,6 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--show-help', action='store_true', help='Show all config and CLI options')
     parser.add_argument('--eval-model-path', type=str, help='Path to a saved model file for evaluation')
     parser.add_argument('--eval-data-path', type=str, help='Path to a CSV file with data for evaluating a saved model')
-    parser.add_argument('--batch-mode', action='store_true', help='Run in batch mode using run.txt')
     parser.add_argument('-h', '--help', action='help', help='Show this help message and exit')
     return parser.parse_args()
 
@@ -211,7 +210,6 @@ def run_feature_selection(data, config, method_override=None):
     except Exception as e:
         logging.warning(f"Feature selection skipped or failed: {str(e)}")
     
-    print(f"After feature selection: {data.shape}")
     return data
 
 def run_model_pipeline(data: pd.DataFrame, config: Dict[str, Any], 
@@ -686,159 +684,13 @@ def run_evaluation(model_path, data_path, config):
         print(f"Error evaluating model: {e}")
         return None
 
-def run_and_log_all_commands(commands_file):
-    """
-    Run all commands from a file and log the results
-    
-    Args:
-        commands_file (str): Path to file containing commands
-    """
-    with open(commands_file, 'r') as f:
-        commands = f.readlines()
-    
-    results_log = []
-    for i, cmd in enumerate(commands):
-        cmd = cmd.strip()
-        if not cmd or cmd.startswith('#'):
-            continue
-            
-        print(f"\n{'='*80}")
-        print(f"Running command {i+1}/{len(commands)}: {cmd}")
-        print(f"{'='*80}")
-        
-        try:
-            os.system(cmd)
-            results_log.append(f"Command {i+1}: {cmd} - SUCCESS")
-        except Exception as e:
-            results_log.append(f"Command {i+1}: {cmd} - FAILED: {str(e)}")
-    
-    # Write results log
-    with open('command_results.log', 'w') as f:
-        f.write('\n'.join(results_log))
-    
-    print(f"\n{'='*80}")
-    print(f"All commands completed. Results logged to command_results.log")
-    print(f"{'='*80}")
-
-def consolidate_results(results_dir='results'):
-    """
-    Consolidate all model results into a single CSV file
-    
-    Args:
-        results_dir (str): Directory containing results files
-    """
-    results_path = Path(results_dir)
-    if not results_path.exists():
-        print(f"Results directory {results_dir} does not exist")
-        return
-        
-    # Find all CSV files
-    csv_files = list(results_path.glob('*.csv'))
-    if not csv_files:
-        print(f"No CSV files found in {results_dir}")
-        return
-        
-    # Combine all CSV files
-    all_results = []
-    for csv_file in csv_files:
-        try:
-            df = pd.read_csv(csv_file)
-            # Add filename as source column
-            df['source_file'] = csv_file.name
-            all_results.append(df)
-        except Exception as e:
-            print(f"Error reading {csv_file}: {e}")
-            
-    if not all_results:
-        print("No results could be loaded")
-        return
-        
-    # Combine all results
-    consolidated = pd.concat(all_results, ignore_index=True)
-    
-    # Save consolidated results
-    output_path = results_path / 'consolidated_results.csv'
-    consolidated.to_csv(output_path, index=False)
-    print(f"Consolidated results saved to {output_path}")
-    
-    return consolidated
-
 def check_and_create_directories():
     """Create all required directories if they don't exist"""
-    required_dirs = ['models', 'plots', 'results', 'logs']
+    required_dirs = ['models', 'plots', 'results']
     for dir_name in required_dirs:
         dir_path = Path(dir_name)
         dir_path.mkdir(parents=True, exist_ok=True)
         print(f"Ensured directory exists: {dir_path.absolute()}")
-
-def run_batch_commands(run_file_path=None):
-    """Execute all commands from run.txt with proper logging and result tracking"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = f"logs/batch_run_{timestamp}.log"
-    logging.basicConfig(
-        filename=log_file,
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    
-    # Use default path if none provided
-    if run_file_path is None:
-        run_file_path = os.path.join(os.path.dirname(__file__), 'run.txt')
-    
-    if not os.path.exists(run_file_path):
-        raise FileNotFoundError(f"Run file not found: {run_file_path}")
-    
-    with open(run_file_path, 'r') as f:
-        commands = [cmd.strip() for cmd in f.readlines() if cmd.strip() and not cmd.startswith('#')]
-    
-    results = []
-    for i, cmd in enumerate(commands, 1):
-        logging.info(f"Executing command {i}/{len(commands)}: {cmd}")
-        print(f"\nExecuting command {i}/{len(commands)}...")
-        
-        try:
-            # Parse command into args, skipping 'python main.py'
-            cmd_parts = cmd.split()
-            if len(cmd_parts) > 2:  # Skip 'python main.py'
-                args = cmd_parts[2:]
-            else:
-                continue
-                
-            # Create parser for this command
-            parser = argparse.ArgumentParser()
-            parser.add_argument('--config', type=str, default='config.yaml')
-            parser.add_argument('--model', type=str)
-            parser.add_argument('--feature-selection', type=str)
-            parser.add_argument('--tune-method', type=str)
-            
-            try:
-                cmd_args = parser.parse_args(args)
-            except Exception as e:
-                logging.error(f"Failed to parse arguments: {e}")
-                continue
-            
-            # Run the command through main pipeline
-            config = load_config(cmd_args.config)
-            setup_output_directories(config)
-            data = safe_load_or_generate_data(config, None)
-            data = safe_run_preprocessing(data, config)
-            data = safe_run_feature_engineering(data, config)
-            data = safe_run_feature_selection(data, config, cmd_args.feature_selection)
-            results = safe_run_model_pipeline(data, config, cmd_args.model, cmd_args.tune_method)
-            safe_save_results(results, config, cmd_args.model, cmd_args.feature_selection, cmd_args.tune_method)
-            
-            logging.info(f"Command {i} completed successfully")
-        except Exception as e:
-            logging.error(f"Command {i} failed: {str(e)}")
-            continue
-    
-    # Consolidate results
-    try:
-        consolidated_df = consolidate_results('results')
-        consolidated_df.to_csv(f'results/consolidated_results_{timestamp}.csv', index=False)
-        logging.info("Results consolidated successfully")
-    except Exception as e:
-        logging.error(f"Failed to consolidate results: {str(e)}")
 
 def run_pipeline_step(step_function, *args, **kwargs):
     """Helper function to run a pipeline step with error handling."""
@@ -896,15 +748,7 @@ def main():
     
     # Add logic for evaluating a saved model
     if getattr(args, 'eval_model_path', None) and getattr(args, 'eval_data_path', None):
-        eval_data = pd.read_csv(args.eval_data_path)
-        target_col = config['data']['target_column']
-        X_eval = eval_data.drop(columns=[target_col])
-        y_eval = eval_data[target_col]
-        print(f"\n=== Evaluating Saved Model: {args.eval_model_path} ===")
-        eval_results = ModelEvaluator.evaluate_saved_model(
-            args.eval_model_path, X_eval.values, y_eval.values, X_full=X_eval.values
-        )
-        print(yaml.dump(eval_results, sort_keys=False, allow_unicode=True))
+        run_evaluation(args.eval_model_path, args.eval_data_path, config)
         return
     
     # Load or generate data
@@ -916,35 +760,177 @@ def main():
 
     # EDA usage (before preprocessing)
     print("\n=== Exploratory Data Analysis (EDA) ===")
-    run_pipeline_step(ExploratoryAnalysis(data).basic_summary)
-    run_pipeline_step(ExploratoryAnalysis(data).plot_distributions)
-
-    # Preprocessing
+    run_pipeline_step(run_eda, data, config)
+    
+    # Split the data immediately after EDA
+    print("\n=== Splitting Data ===")
+    target = config['data']['target_column']
+    splitter = DataSplitter(data)
+    train_data, test_data = splitter.simple_random_split(
+        test_size=config['data']['test_size'],
+        random_state=config['data']['random_state']
+    )
+    print(f"Train data shape: {train_data.shape}, Test data shape: {test_data.shape}")
+    
+    # Preprocessing - apply to both train and test sets separately
     print("\n=== Preprocessing Data ===")
-    data = run_pipeline_step(safe_run_preprocessing, data, config)
-    if data is None:
+    train_data = run_pipeline_step(safe_run_preprocessing, train_data, config)
+    if train_data is None:
         return
-    print(f"After preprocessing: {data.shape}")
+    test_data = run_pipeline_step(safe_run_preprocessing, test_data, config)
+    if test_data is None:
+        return
+    print(f"After preprocessing - Train: {train_data.shape}, Test: {test_data.shape}")
 
-    # Feature engineering
+    # Feature engineering - apply to both train and test sets separately
     print("\n=== Feature Engineering ===")
-    data = run_pipeline_step(safe_run_feature_engineering, data, config)
-    if data is None:
+    train_data = run_pipeline_step(safe_run_feature_engineering, train_data, config)
+    if train_data is None:
         return
-    print(f"After feature engineering: {data.shape}")
+    test_data = run_pipeline_step(safe_run_feature_engineering, test_data, config)
+    if test_data is None:
+        return
+    print(f"After feature engineering - Train: {train_data.shape}, Test: {test_data.shape}")
 
-    # Feature selection
+    # Feature selection - fit on train data, apply to both train and test
     print("\n=== Feature Selection ===")
-    data = run_pipeline_step(safe_run_feature_selection, data, config, args.feature_selection)
-    if data is None:
-        return
-    print(f"After feature selection: {data.shape}")
+    selector = FeatureSelector(train_data)
+    fs_method = args.feature_selection or config.get('feature_selection', {}).get('method', 'none')
+    fs_config = config.get('feature_selection', {})
+    n_features = fs_config.get('n_features', 10)
+    
+    print(f"Using feature selection method: {fs_method}")
+    try:
+        if fs_method.lower() in ('k_best', 'k-best'):
+            train_data = selector.select_k_best(target, k=n_features)
+            # Apply same feature selection to test data
+            test_data = test_data[train_data.columns]
+        elif fs_method.lower() == 'lasso':
+            alpha = fs_config.get('alpha', 0.1)
+            train_data = selector.lasso_selection(target, alpha=alpha)
+            test_data = test_data[train_data.columns]
+        elif fs_method.lower() == 'rfe':
+            step = fs_config.get('step', 1)
+            train_data = selector.recursive_feature_elimination(target, n_features_to_select=n_features, step=step)
+            test_data = test_data[train_data.columns]
+        elif fs_method.lower() == 'random_forest':
+            rf_params = {k: v for k, v in fs_config.items() if k not in ['method', 'n_features']}
+            train_data = selector.random_forest_selection(target, n_features=n_features, **rf_params)
+            test_data = test_data[train_data.columns]
+        elif fs_method.lower() == 'vif':
+            threshold = fs_config.get('threshold', 5.0)
+            train_data = selector.multicollinearity_analysis(target, threshold=threshold)
+            test_data = test_data[train_data.columns]
+        elif fs_method.lower() == 'knn':
+            n_neighbors = fs_config.get('n_neighbors', 5)
+            train_data = selector.knn_feature_selection(target, n_features=n_features, n_neighbors=n_neighbors)
+            test_data = test_data[train_data.columns]
+    except Exception as e:
+        logging.warning(f"Feature selection skipped or failed: {str(e)}")
+    
+    print(f"After feature selection - Train: {train_data.shape}, Test: {test_data.shape}")
 
-    # Model pipeline
-    print(f"\n=== Training Model: {args.model} ===")
-    results = run_pipeline_step(safe_run_model_pipeline, data, config, args.model, args.tune_method)
-    if results is None:
-        return
+    # Model training
+    print(f"\n=== Training Model: {args.model if args.model else 'all enabled models'} ===")
+    
+    # Extract features and target from train and test sets
+    X_train = train_data.drop(columns=[target])
+    y_train = train_data[target]
+    X_test = test_data.drop(columns=[target])
+    y_test = test_data[target]
+    
+    # Initialize model builder
+    model_builder = ModelBuilder()
+    
+    # Get models to run
+    models_to_run = [m for m in config['models'] 
+                    if m['enable'] and (not args.model or m['name'] == args.model)]
+    
+    results = {}
+    for model_config in models_to_run:
+        try:
+            model_type = model_config['name']
+            print(f"Training model: {model_type}")
+            
+            # Apply fixed parameters from config for this model
+            fixed_params = model_config.get('fixed_params', {})
+            
+            # For XGBoost, explicitly set tree_method and disable categorical support
+            if model_type == 'xgboost':
+                fixed_params['tree_method'] = fixed_params.get('tree_method', 'hist')
+                fixed_params['enable_categorical'] = False
+            
+            # Apply hyperparameter tuning if specified
+            tuning_method = args.tune_method or config['tuning']['method']
+            if tuning_method == 'random':
+                # Merge fixed params with tuning params
+                param_distributions = model_config['params'].copy()
+                for param, value in fixed_params.items():
+                    param_distributions[param] = [value]  # Use list for RandomizedSearchCV
+                
+                search_results = model_builder.random_search_cv(
+                    X_train, y_train,
+                    model_type=model_type,
+                    param_distributions=param_distributions,
+                    n_iter=config['tuning']['n_iter'],
+                    cv=config['tuning']['cv_folds']
+                )
+                best_params = search_results.get('best_params', {})
+            elif tuning_method == 'grid':
+                # Merge fixed params with tuning params
+                param_grid = model_config['params'].copy()
+                for param, value in fixed_params.items():
+                    param_grid[param] = [value]  # Use list for GridSearchCV
+                
+                search_results = model_builder.grid_search_cv(
+                    X_train, y_train,
+                    model_type=model_type,
+                    param_grid=param_grid,
+                    cv=config['tuning']['cv_folds']
+                )
+                best_params = search_results.get('best_params', {})
+            
+            if not best_params:
+                print(f"No best parameters found for {model_type}")
+                continue
+            
+            # Add fixed parameters to best_params
+            for param, value in fixed_params.items():
+                best_params[param] = value
+            
+            # Train and evaluate model
+            model_results = model_builder.train_evaluate_model(
+                X_train, X_test, y_train, y_test,
+                model_type=model_type,
+                params=best_params
+            )
+            
+            # Store results
+            results[model_type] = {
+                'model': model_builder.models[model_type],
+                'train_results': model_results['train'],
+                'test_results': model_results['test'],
+                'best_params': best_params
+            }
+            
+            # Run model evaluation if configured
+            if any(config['evaluation']['analysis'].values()):
+                evaluator = ModelEvaluator(y_test, model_results['test']['predictions'], config)
+                eval_results = evaluator.get_complete_evaluation(X_test, model_builder.models[model_type])
+                results[model_type]['evaluation'] = eval_results
+                
+                # Generate plots if configured
+                if config['evaluation']['plots']['residuals']:
+                    evaluator.plot_residual_analysis()
+                if config['evaluation']['plots']['learning_curves']:
+                    model_builder.plot_learning_curves(
+                        X_train, y_train,
+                        model_type=model_type,
+                        params=best_params
+                    )
+        except Exception as e:
+            logging.error(f"Error training model {model_config['name']}: {e}")
+            continue
 
     # Save results
     print("\n=== Saving Results ===")
@@ -965,9 +951,12 @@ def main():
                 for param, value in model_results['best_params'].items():
                     print(f"    {param}: {value}")
 
+    print(f"\n=== Evaluating Training Model ===")
+    eval_results = ModelEvaluator.evaluate_saved_model(
+        args.model, X_test.values, y_test.values, X_full=X_test.values
+    )
+    print(yaml.dump(eval_results, sort_keys=False, allow_unicode=True))
+
 if __name__ == "__main__":
     args = parse_arguments()
-    if hasattr(args, 'batch_mode') and args.batch_mode:
-        run_batch_commands('run.txt')
-    else:
-        main()
+    main()

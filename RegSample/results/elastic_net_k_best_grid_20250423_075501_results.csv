@@ -1,2 +1,0 @@
-model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_alpha,param_fit_intercept,param_l1_ratio,param_max_iter,param_random_state,param_selection,param_tol
-elastic_net,0.6633280714582845,0.5975057053282696,0.3379937708377838,0.39610379934310913,0.4198925793170929,0.42454084753990173,0.6633280515670776,0.5975327491760254,0.1,True,0.5,1000,42,cyclic,0.0001

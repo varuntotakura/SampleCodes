@@ -1,2 +1,0 @@
-model,train_r2,test_r2,train_mse,test_mse,train_mae,test_mae,train_explained_variance,test_explained_variance,param_C,param_epsilon,param_gamma,param_kernel,param_max_iter,param_tol
-svr,0.42940184373744883,0.4274548487185621,0.5728384137445964,0.5634547296388489,0.6237407994955325,0.6169226288216672,0.7417682795343743,0.7333012342677161,1.0,0.1,scale,rbf,1000,0.001
