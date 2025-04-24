@@ -4,58 +4,44 @@ from datetime import datetime, timedelta
 import random
 import string
 
-def generate_synthetic_data(rows=1000, cols=30, seed=42):
+def generate_synthetic_data(rows=1000, cols=20, seed=42):  # Reduced cols for cleaner data
     """
-    Generates a synthetic DataFrame with mixed data types:
-    - Boolean
-    - Integer (numeric)
-    - Float
-    - Text
-    - Categorical
-    - Date
-
-    Parameters:
-    - rows: int, number of rows
-    - cols: int, total number of columns
-
-    Returns:
-    - df: pd.DataFrame, synthetic dataset
+    Generates a synthetic DataFrame with mixed data types focusing on numeric features
     """
     np.random.seed(seed)
     random.seed(seed)
 
-    col_types = ['bool', 'int', 'float', 'text', 'category', 'date']
+    # More emphasis on numeric columns
+    col_types = ['int', 'float', 'category']  # Removed text and boolean for simplicity
     type_counts = {k: cols // len(col_types) for k in col_types}
-    remainder = cols % len(col_types)
-    for i in range(remainder):
-        type_counts[col_types[i]] += 1
-
+    
     data = {}
-
-    for i in range(type_counts['bool']):
-        data[f'bool_col_{i}'] = np.random.choice([True, False], size=rows)
-
+    
+    # Generate more meaningful features
     for i in range(type_counts['int']):
-        data[f'int_col_{i}'] = np.random.randint(0, 1000, size=rows)
-
+        base = np.random.randint(0, 100, size=rows)
+        noise = np.random.normal(0, 0.1, size=rows)  # Add small noise
+        data[f'int_col_{i}'] = base + noise
+    
     for i in range(type_counts['float']):
-        data[f'float_col_{i}'] = np.random.uniform(0, 1000, size=rows)
-
-    for i in range(type_counts['text']):
-        data[f'text_col_{i}'] = [''.join(random.choices(string.ascii_letters, k=10)) for _ in range(rows)]
-
+        base = np.random.normal(50, 10, size=rows)  # More controlled distribution
+        data[f'float_col_{i}'] = base
+    
     for i in range(type_counts['category']):
-        data[f'cat_col_{i}'] = pd.Series(np.random.choice(['A', 'B', 'C', 'D'], size=rows)).astype("category")
+        data[f'cat_col_{i}'] = pd.Series(np.random.choice(['A', 'B', 'C'], size=rows, p=[0.4, 0.3, 0.3])).astype("category")
+    
+    # Generate target with actual relationships to features
+    target = np.zeros(rows)
+    for col in data:
+        if 'int_col' in col or 'float_col' in col:
+            coef = np.random.uniform(-2, 2)  # Random coefficient
+            target += coef * data[col]
+    
+    # Add some noise to target
+    target += np.random.normal(0, 1, size=rows)
+    data['target'] = target
 
-    base_date = datetime(2020, 1, 1)
-    for i in range(type_counts['date']):
-        data[f'date_col_{i}'] = [base_date + timedelta(days=np.random.randint(0, 3650)) for _ in range(rows)]
-
-    data[f'target'] = np.random.uniform(0, 1000, size=rows)
-
-    df = pd.DataFrame(data)
-    df['target'] = df['target'].astype(float)
-    return df
+    return pd.DataFrame(data)
 
 # Generate and preview
 main_df = generate_synthetic_data()
@@ -637,3 +623,170 @@ best_config = randomized_search.best_params_
 print("\nBest Hyperparameters:")
 for param, value in best_config.items():
     print(f"{param}: {value}")
+
+def run_model(model_name, X_train, X_test, y_train, y_test, params=None):
+    """
+    Run a single model with error handling and basic parameter tuning.
+    """
+    try:
+        print(f"\nRunning {model_name}...")
+        
+        # Create base model
+        model = create_model(model_name)
+        
+        # Get default params if none provided
+        if params is None:
+            if model_name in param_grids:
+                params = {k: v[0] if isinstance(v, list) else v 
+                         for k, v in param_grids[model_name.lower()].items()}
+            else:
+                params = {}
+        
+        # Handle categorical features for models that need it
+        X_train_prep = X_train.copy()
+        X_test_prep = X_test.copy()
+        
+        # Drop text columns since they're random and not useful for prediction
+        text_cols = X_train_prep.select_dtypes(include=['object']).columns
+        X_train_prep = X_train_prep.drop(columns=text_cols)
+        X_test_prep = X_test_prep.drop(columns=text_cols)
+        
+        # One-hot encode categorical columns
+        cat_cols = X_train_prep.select_dtypes(include=['category']).columns
+        for col in cat_cols:
+            # Get all unique categories from both train and test
+            all_categories = pd.concat([X_train_prep[col], X_test_prep[col]]).unique()
+            # Create binary columns for each category
+            for category in all_categories:
+                col_name = f"{col}_{category}"
+                X_train_prep[col_name] = (X_train_prep[col] == category).astype(int)
+                X_test_prep[col_name] = (X_test_prep[col] == category).astype(int)
+            # Drop original categorical column
+            X_train_prep = X_train_prep.drop(columns=[col])
+            X_test_prep = X_test_prep.drop(columns=[col])
+        
+        # Convert datetime to numeric
+        for col in X_train_prep.select_dtypes(include=['datetime64']).columns:
+            X_train_prep[col] = X_train_prep[col].astype(np.int64)
+            X_test_prep[col] = X_test_prep[col].astype(np.int64)
+        
+        # Ensure all remaining columns are numeric
+        X_train_prep = X_train_prep.astype(float)
+        X_test_prep = X_test_prep.astype(float)
+        
+        # Create and train model
+        model = create_model(model_name, params)
+        model.fit(X_train_prep, y_train)
+        
+        # Make predictions
+        y_pred = model.predict(X_test_prep)
+        
+        # Calculate metrics
+        metrics = calculate_metrics(y_test, y_pred)
+        
+        return {"status": "success", "model": model, "metrics": metrics}
+    
+    except Exception as e:
+        return {"status": "error", "model_name": model_name, "error": str(e)}
+
+def run_all_models(X_train, X_test, y_train, y_test):
+    """
+    Run all supported models and return their results.
+    """
+    models = [
+        "LinearRegression",
+        "Lasso",
+        "Ridge",
+        "ElasticNet",
+        "RandomForest",
+        "SVR",
+        "KNeighbors",
+        "AdaBoost",
+        "Bagging",
+        "XGBoost",
+        "GradientBoosting"
+    ]
+    
+    results = {}
+    for model_name in models:
+        result = run_model(model_name, X_train, X_test, y_train, y_test)
+        results[model_name] = result
+        
+        if result["status"] == "success":
+            print(f"\n{model_name} Results:")
+            for metric, value in result["metrics"].items():
+                print(f"{metric}: {value:.4f}")
+        else:
+            print(f"\n{model_name} Error:")
+            print(result["error"])
+    
+    return results
+
+# Run all models
+if __name__ == "__main__":
+    # Generate synthetic data with fewer, more meaningful features
+    main_df = generate_synthetic_data(rows=1000, cols=15)
+    df = main_df.copy()
+    
+    # Prepare data
+    df = drop_duplicates(df)
+    df = drop_constant_columns(df)
+    df = impute_missing_values(df, strategy="median")
+    
+    # Split data
+    train, test = split_regression_data(df, target_col='target', method='random', test_size=0.2, random_state=42)
+    X_train = train.drop(columns=['target'])
+    y_train = train['target']
+    X_test = test.drop(columns=['target'])
+    y_test = test['target']
+    
+    # Run all models
+    all_models = [
+        "LinearRegression",
+        "Lasso",
+        "Ridge",
+        "ElasticNet",
+        "RandomForest",
+        "SVR",
+        "KNeighbors",
+        "AdaBoost",
+        "Bagging",
+        "XGBoost",
+        "GradientBoosting"
+    ]
+    
+    results = {}
+    for model_name in all_models:
+        # Basic configurations for each model
+        if model_name == "RandomForest":
+            params = {'n_estimators': 100, 'max_depth': 5, 'n_jobs': -1}
+        elif model_name == "XGBoost":
+            params = {'n_estimators': 100, 'max_depth': 3, 'learning_rate': 0.1, 'tree_method': 'hist', 'n_jobs': -1}
+        elif model_name == "SVR":
+            params = {'kernel': 'rbf', 'C': 1.0, 'epsilon': 0.1}
+        else:
+            params = None
+            
+        result = run_model(model_name, X_train, X_test, y_train, y_test, params)
+        results[model_name] = result
+        
+        if result["status"] == "success":
+            print(f"\n{model_name} Results:")
+            for metric, value in result["metrics"].items():
+                print(f"{metric}: {value:.4f}")
+        else:
+            print(f"\n{model_name} Error:")
+            print(result["error"])
+    
+    # Find best model among successful ones
+    successful_models = {
+        name: result["metrics"]["R2"] 
+        for name, result in results.items() 
+        if result["status"] == "success"
+    }
+    
+    if successful_models:
+        best_model = max(successful_models.items(), key=lambda x: x[1])
+        print(f"\nBest Model: {best_model[0]} (R2: {best_model[1]:.4f})")
+    else:
+        print("\nNo models completed successfully")
